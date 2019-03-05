@@ -24,6 +24,13 @@ Reference the file under resources like this:
           - sensor.bin_collection
 
 
-### calendars
+### calendars (optional)
+This is a list of calendar entities you want events to display for in your feed.
+
+### id_filter (optional)
+This is a regular expression for filtering persistent notifications by notification id. In the example above, "^home_feed_.*" will result in only notifications with ids starting with home_feed_ from being displayed.
+
+### entities (optional)
+A list of entities to display on the feed. For sensors with a device_class of "timestamp" the message text is the entity name and the time is the state of the sensor. For all other entities the message text is in the format "*entity name* @ *state*" and the time is the last modified time of the entity.
 
 
