@@ -313,7 +313,7 @@ class HomeFeedCard extends Polymer.Element {
     			closeLink.addEventListener("click", (e) => this._handleDismiss(e));
     			closeLink.dataset.notificationId = n.notification_id;
     			let closeImage = document.createElement("img");
-    			closeImage.src = `/local/custom-lovelace/home-feed-card/images/close.png`;
+    			closeImage.src = `${this.rootUrl}/images/close.png`;
     			closeLink.appendChild(closeImage);
     			closeDiv.appendChild(closeLink);
     			outerDiv.appendChild(closeDiv);
