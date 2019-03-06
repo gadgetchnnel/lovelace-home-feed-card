@@ -1,7 +1,7 @@
 class HomeFeedCard extends Polymer.Element {
     constructor() {
     	super();
-    	
+    	this.pageId = location.pathname.replace(/\//g,"_");
     	this.loadFromCache();
 	 	this.registerHandlers();
 	 	
@@ -66,15 +66,14 @@ class HomeFeedCard extends Polymer.Element {
     }
     
     loadFromCache() {
-    	this.events = JSON.parse(localStorage.getItem('home-feed-card-events'));
-	 	this.lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate'));
-	 	this.notifications = JSON.parse(localStorage.getItem('home-feed-card-notifications'));
+    	this.events = JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId));
+	 	this.lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId));
+	 	this.notifications = JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.pageId));
     }
     
     setConfig(config) {
       if(!config)
       	throw new Error("Invalid configuration");
-      
       this._config = config;
       this.entities = this.processConfigEntities(this._config.entities);
       this.calendars = this._config.calendars;
@@ -141,8 +140,8 @@ class HomeFeedCard extends Polymer.Element {
 	 	
 	 	this.events = data;
 	 	this.lastUpdate = moment();
-	 	localStorage.setItem('home-feed-card-events',JSON.stringify(this.events));
-	 	localStorage.setItem('home-feed-card-eventsLastUpdate',JSON.stringify(this.lastUpdate));
+	 	localStorage.setItem('home-feed-card-events' + this.pageId,JSON.stringify(this.events));
+	 	localStorage.setItem('home-feed-card-eventsLastUpdate' + this.pageId,JSON.stringify(this.lastUpdate));
 	 	return data;
 	 }
 	 else{
@@ -160,7 +159,7 @@ class HomeFeedCard extends Polymer.Element {
 	 });
 	 this.notifications = data;
 	 
-	 localStorage.setItem('home-feed-card-notifications',JSON.stringify(this.notifications));
+	 localStorage.setItem('home-feed-card-notifications' + this.pageId,JSON.stringify(this.notifications));
 	 
 	 this._build();
    }
