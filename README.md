@@ -24,6 +24,8 @@ Reference the file under resources like this:
           - entity: sensor.bin_collection
             name: Next Bin Collection
 
+![Example](https://user-images.githubusercontent.com/2099542/53899297-d0abb580-4031-11e9-8357-ac45c71e95f5.png)
+
 ### calendars (optional)
 This is a list of calendar entities you want events to display for in your feed.
 
