@@ -1,14 +1,10 @@
 class HomeFeedCard extends Polymer.Element {
     constructor() {
     	super();
-    	this.events = JSON.parse(localStorage.getItem('home-feed-card-events'));
-	 	this.lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate'));
-	 	this.notifications = JSON.parse(localStorage.getItem('home-feed-card-notifications'));
+    	
+    	this.loadFromCache();
+	 	this.registerHandlers();
 	 	
-	 	this.subscriptionHandler = () => {
-    		console.info(`%cRefreshing persistent_notifications`, "color: green; font-weight: bold", "");
-    		this.refreshNotifications().then(() => {});
-    	}
   	}
 	
     static get template(){
@@ -62,14 +58,26 @@ class HomeFeedCard extends Polymer.Element {
     `;
     }
     
+    registerHandlers() {
+    	this.subscriptionHandler = () => {
+    		console.info(`%cRefreshing persistent_notifications`, "color: green; font-weight: bold", "");
+    		this.refreshNotifications().then(() => {});
+    	}
+    }
+    
+    loadFromCache() {
+    	this.events = JSON.parse(localStorage.getItem('home-feed-card-events'));
+	 	this.lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate'));
+	 	this.notifications = JSON.parse(localStorage.getItem('home-feed-card-notifications'));
+    }
+    
     setConfig(config) {
       if(!config)
       	throw new Error("Invalid configuration");
-      	
+      
       this._config = config;
       this.entities = this.processConfigEntities(this._config.entities);
       this.calendars = this._config.calendars;
-      
       setTimeout(() => this._build(), 10);
     }
   
@@ -183,15 +191,21 @@ class HomeFeedCard extends Polymer.Element {
     		}
    }
    
+   
+    		
    async getFeedItems(){
    		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities()]));
-   		allItems = allItems.map(item => { 
-   			return {...item, timestamp: this.getItemTimestamp(item) }; 
+   		var now = new Date();
+   		allItems = allItems.map(item => {
+   			let timeStamp = this.getItemTimestamp(item);
+   			let tsDate = new Date(timeStamp);
+   			let diff = ((now - tsDate) / 1000);
+    		return {...item, timestamp: timeStamp, timeDifference: { value: diff, abs: Math.abs(diff), sign: Math.sign(diff) } }; 
    		});
    		
    		var sorted = allItems.sort((a,b) => {
-   			if (a.timestamp < b.timestamp) return -1;
-  			if (a.timestamp > b.timestamp) return 1;
+   			if (a.timeDifference.abs < b.timeDifference.abs) return -1;
+  			if (a.timeDifference.abs > b.timeDifference.abs) return 1;
   			return 0;	
    		});
    		return sorted;
@@ -273,16 +287,11 @@ class HomeFeedCard extends Polymer.Element {
     		let now = new Date();
     		let tsDate = new Date(n.timestamp);
     		
-    		let seconds = ((now - tsDate) / 1000);
-    		let absSeconds = Math.abs(seconds);
-    		let signSeconds = Math.sign(seconds);
-    		
-    		
-    		if(absSeconds < 60) {
+    		if(n.timeDifference.abs < 60) {
 				// Time difference less than 1 minute, so use a regular div tag with fixed text.
 				// This avoids the time display refreshing too often shortly before or after an item's timestamp
     			let timeItem = document.createElement("div");
-    			timeItem.innerText = signSeconds == 0 ? "now" : signSeconds == 1 ? "Less than 1 minute ago" : "In less than 1 minute";
+    			timeItem.innerText = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "Less than 1 minute ago" : "In less than 1 minute";
     			innerDiv.appendChild(timeItem);
     		}
     		else {
