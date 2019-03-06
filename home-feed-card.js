@@ -4,7 +4,8 @@ class HomeFeedCard extends Polymer.Element {
     	this.pageId = location.pathname.replace(/\//g,"_");
     	this.loadFromCache();
 	 	this.registerHandlers();
-	 	
+	 	var scriptUrl = document.querySelector('script[src*="home-feed-card.js"]').src;
+	 	this.rootUrl = scriptUrl.substring(0, scriptUrl.lastIndexOf("/"));
   	}
 	
     static get template(){
@@ -278,7 +279,7 @@ class HomeFeedCard extends Polymer.Element {
     		}
     		
     		let contentItem = document.createElement("ha-markdown");
-    		let imageurl = `/local/custom-lovelace/home-feed-card/images/${icon}.png`;
+    		let imageurl = `${this.rootUrl}/images/${icon}.png`;
     		
     		contentItem.content = `&nbsp;&nbsp;![Notification](${imageurl})${tab}${contentText}`;
     		innerDiv.appendChild(contentItem);
