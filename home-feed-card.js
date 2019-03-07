@@ -21,12 +21,38 @@ class HomeFeedCard extends Polymer.Element {
 		#notifications > * {
 			margin: 8px 0;
 		}
-
 		#notifications > div > * {
 			overflow: hidden;
 			padding-right: 1em;
 		}
+		
+		.item-container {
+			width: 100%;
+    		height: auto;
+		}
 
+		.item-left, .item-right {
+    		width: 20px;
+    		height: 100%;
+    		float: left;
+		}
+
+		.item-right {
+    		float: right;
+		}
+		
+		.item-right ha-icon {
+			cursor:pointer;
+		}
+		
+		.item-content {
+    		overflow: auto;
+    		height: 100%;
+		}
+		
+		.item-content ha-markdown p {
+			margin-top: 0px;
+		}
 		.header {
   			font-family: var(--paper-font-headline_-_font-family); -webkit-font-smoothing: var(--paper-font-headline_-_-webkit-font-smoothing); font-size: var(--paper-font-headline_-_font-size); font-weight: var(--paper-font-headline_-_font-weight); letter-spacing: var(--paper-font-headline_-_letter-spacing); line-height: var(--paper-font-headline_-_line-height);
   			line-height: 30px;
@@ -45,7 +71,6 @@ class HomeFeedCard extends Polymer.Element {
 		.header .name {
 			white-space: var(--paper-font-common-nowrap_-_white-space); overflow: var(--paper-font-common-nowrap_-_overflow); text-overflow: var(--paper-font-common-nowrap_-_text-overflow);
 		}
-
 		.state-card-dialog {
 			cursor: pointer;
 		}
@@ -210,8 +235,9 @@ class HomeFeedCard extends Polymer.Element {
    }
    
    _handleDismiss(event) {
+   var id = event.target.dataset.notificationId;
     this._hass.callService("persistent_notification", "dismiss", {
-      notification_id: event.target.parentElement.dataset.notificationId
+      notification_id: id
     });   
   }
   
@@ -244,11 +270,21 @@ class HomeFeedCard extends Polymer.Element {
     		while(root.lastChild) root.removeChild(root.lastChild);
     		items.forEach((n) => {
     		
-    		let outerDiv = document.createElement("div");
+    		let itemContainer = document.createElement("div");
+    		itemContainer.classList.add("item-container");
     		
-    		let innerDiv = document.createElement("div");
+    		let itemLeft = document.createElement("div");
+    		itemLeft.classList.add("item-left");
     		
-    		let tab = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+    		let itemContent = document.createElement("div");
+    		itemContent.classList.add("item-content");
+    		
+    		let itemRight = document.createElement("div");
+    		itemRight.classList.add("item-right");
+    		
+    		itemContainer.appendChild(itemLeft);
+    		itemContainer.appendChild(itemRight);
+    		itemContainer.appendChild(itemContent);
     		
     		switch(n.item_type)
     		{
@@ -276,31 +312,23 @@ class HomeFeedCard extends Polymer.Element {
     				var contentText = "Unknown Item Type";
     		}
     		
-    		let contentDiv = document.createElement("div");
-    		contentDiv.style.clear = "both";
-    		
     		let iconElement = document.createElement("ha-icon");
     		iconElement.icon = icon;
-    		iconElement.style.cssFloat = "left";
-    	    contentDiv.appendChild(iconElement);
+    		itemLeft.appendChild(iconElement);
     		
     		let contentItem = document.createElement("ha-markdown");
     		contentItem.content = `${contentText}`;
-    		contentItem.style.cssFloat = "left";
-    		contentDiv.appendChild(contentItem);
-    		let clearDiv = document.createElement("div");
-    		clearDiv.style.clear = "both";
+    		//contentItem.style.cssFloat = "left";
+    		contentItem.classList.add("markdown-content");
+    		itemContent.appendChild(contentItem);
     		
-    		
-    		innerDiv.appendChild(contentDiv);
-    		innerDiv.appendChild(clearDiv);
     		if(n.timeDifference.abs < 60) {
 				// Time difference less than 1 minute, so use a regular div tag with fixed text.
 				// This avoids the time display refreshing too often shortly before or after an item's timestamp
     			let timeItem = document.createElement("div");
     			timeItem.innerText = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "Less than 1 minute ago" : "In less than 1 minute";
     			timeItem.style.display = "block";
-    			innerDiv.appendChild(timeItem);
+    			itemContent.appendChild(timeItem);
     		}
     		else {
     			// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
@@ -309,30 +337,26 @@ class HomeFeedCard extends Polymer.Element {
     			timeItem.ts = new Date(n.timestamp);
     			timeItem.format = "relative";
     			timeItem.style.display = "block";
-    			innerDiv.appendChild(timeItem);
+    			itemContent.appendChild(timeItem);
     		}
-    		outerDiv.appendChild(innerDiv);
     		
     		if(n.item_type == "notification"){
-    			innerDiv.style.cssFloat = "left";
-    			let closeDiv = document.createElement("div");
-    			closeDiv.style.cssFloat = "right";
-    			let closeLink = document.createElement("a");
-    			closeLink.href = "#";
-    			closeLink.addEventListener("click", (e) => this._handleDismiss(e));
-    			closeLink.dataset.notificationId = n.notification_id;
+    			//let closeLink = document.createElement("a");
+    			//closeLink.href = "#";
+    			//closeLink.addEventListener("click", (e) => this._handleDismiss(e));
+    			//closeLink.dataset.notificationId = n.notification_id;
     			let closeIcon = document.createElement("ha-icon");
+    			closeIcon.addEventListener("click", (e) => this._handleDismiss(e));
     			closeIcon.icon = "mdi:close";
-    			closeLink.appendChild(closeIcon);
-    			closeDiv.appendChild(closeLink);
-    			outerDiv.appendChild(closeDiv);
+    			closeIcon.dataset.notificationId = n.notification_id;
+    			//closeLink.appendChild(closeIcon);
+    			//itemRight.appendChild(closeLink);
+    			itemRight.appendChild(closeIcon);
     		}
-    		
+    		root.appendChild(itemContainer);
     		let hr = document.createElement("hr");
     		hr.style.clear = "both";
-    		outerDiv.appendChild(hr);
-    		
-    		root.appendChild(outerDiv);
+    		root.appendChild(hr);
     	});
   		}
   	  );
