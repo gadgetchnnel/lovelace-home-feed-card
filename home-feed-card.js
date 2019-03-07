@@ -4,8 +4,6 @@ class HomeFeedCard extends Polymer.Element {
     	this.pageId = location.pathname.replace(/\//g,"_");
     	this.loadFromCache();
 	 	this.registerHandlers();
-	 	var scriptUrl = document.querySelector('script[src*="home-feed-card.js"]').src;
-	 	this.rootUrl = scriptUrl.substring(0, scriptUrl.lastIndexOf("/"));
   	}
 	
     static get template(){
@@ -39,7 +37,7 @@ class HomeFeedCard extends Polymer.Element {
           	position: -webkit-sticky;
           	position: sticky;
           	top: 0;
-          	/*border-top: 16px solid black;*/
+          	z-index: 999;
           	width: 100%;
           	background: var(--ha-card-background, var(--paper-card-background-color, white));
           	opacity: 1.0;
@@ -255,51 +253,62 @@ class HomeFeedCard extends Polymer.Element {
     		switch(n.item_type)
     		{
     			case "notification":
-    				var icon = "notification";
+    				var icon = "mdi:bell";
     				var contentText = n.message;
     				break;
     			case "calendar_event":
-    				var icon = "calendar_event";
+    				var icon = "mdi:calendar";
     				var contentText = n.summary;
     				break;
     			case "entity":
     				if(n.attributes.device_class === "timestamp"){
     					var contentText = `${n.display_name}`;
-    					var icon = "clock-outline";
+    					var icon = "mdi:clock-outline";
     				}
     				else{
     					var contentText = `${n.display_name} @ ${n.state}`;
-    					var icon = "notification";
+    					var icon = "mdi:bell";
     				}
     				
     				break;
     			default:
-    				var icon = "notification";
+    				var icon = "mdi:bell";
     				var contentText = "Unknown Item Type";
     		}
     		
+    		let contentDiv = document.createElement("div");
+    		contentDiv.style.clear = "both";
+    		
+    		let iconElement = document.createElement("ha-icon");
+    		iconElement.icon = icon;
+    		iconElement.style.cssFloat = "left";
+    	    contentDiv.appendChild(iconElement);
+    		
     		let contentItem = document.createElement("ha-markdown");
-    		let imageurl = `${this.rootUrl}/images/${icon}.png`;
+    		contentItem.content = `${contentText}`;
+    		contentItem.style.cssFloat = "left";
+    		contentDiv.appendChild(contentItem);
+    		let clearDiv = document.createElement("div");
+    		clearDiv.style.clear = "both";
     		
-    		contentItem.content = `&nbsp;&nbsp;![Notification](${imageurl})${tab}${contentText}`;
-    		innerDiv.appendChild(contentItem);
     		
-    		let now = new Date();
-    		let tsDate = new Date(n.timestamp);
-    		
+    		innerDiv.appendChild(contentDiv);
+    		innerDiv.appendChild(clearDiv);
     		if(n.timeDifference.abs < 60) {
 				// Time difference less than 1 minute, so use a regular div tag with fixed text.
 				// This avoids the time display refreshing too often shortly before or after an item's timestamp
     			let timeItem = document.createElement("div");
     			timeItem.innerText = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "Less than 1 minute ago" : "In less than 1 minute";
+    			timeItem.style.display = "block";
     			innerDiv.appendChild(timeItem);
     		}
     		else {
     			// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
     			let timeItem = document.createElement("hui-timestamp-display");
     			timeItem.hass = this._hass;
-    			timeItem.ts = tsDate;
+    			timeItem.ts = new Date(n.timestamp);
     			timeItem.format = "relative";
+    			timeItem.style.display = "block";
     			innerDiv.appendChild(timeItem);
     		}
     		outerDiv.appendChild(innerDiv);
@@ -312,9 +321,9 @@ class HomeFeedCard extends Polymer.Element {
     			closeLink.href = "#";
     			closeLink.addEventListener("click", (e) => this._handleDismiss(e));
     			closeLink.dataset.notificationId = n.notification_id;
-    			let closeImage = document.createElement("img");
-    			closeImage.src = `${this.rootUrl}/images/close.png`;
-    			closeLink.appendChild(closeImage);
+    			let closeIcon = document.createElement("ha-icon");
+    			closeIcon.icon = "mdi:close";
+    			closeLink.appendChild(closeIcon);
     			closeDiv.appendChild(closeLink);
     			outerDiv.appendChild(closeDiv);
     		}
