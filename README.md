@@ -15,6 +15,7 @@ Reference the file under resources like this:
 
     type: 'custom:home-feed-card'
       title: Home Feed
+      show_empty: false
       calendars:
         - calendar.home_calendar
         - calendar.work_calendar
@@ -34,3 +35,6 @@ This is a regular expression for filtering persistent notifications by notificat
 
 ### entities (optional)
 A list of entities to display on the feed. For sensors with a device_class of "timestamp" the message text is the entity name and the time is the state of the sensor. For all other entities the message text is in the format "*entity name* @ *state*" and the time is the last modified time of the entity.
+
+### show_empty (optional, defaults to true)
+Whether to show the card if there are no items to show
