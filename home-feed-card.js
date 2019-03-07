@@ -75,7 +75,7 @@ class HomeFeedCard extends Polymer.Element {
 			cursor: pointer;
 		}
 	</style>
-    <ha-card>
+    <ha-card id="card">
         <div id="header" class="header"></div>
     	<div id="notifications"></div>
     </ha-card>
@@ -266,6 +266,11 @@ class HomeFeedCard extends Polymer.Element {
     	
     	this.getFeedItems().then(items =>
 	  	{
+	  		if(items.length === 0 && this._config.show_empty === false){
+	  		this.$.card.style.display = "none";
+	  			return;
+	  		}
+	  		
 	  		const root = this.$.notifications;
     		while(root.lastChild) root.removeChild(root.lastChild);
     		items.forEach((n) => {
