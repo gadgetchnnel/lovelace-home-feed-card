@@ -271,6 +271,8 @@ class HomeFeedCard extends Polymer.Element {
 	  			return;
 	  		}
 	  		
+	  		this.$.card.style.display = "";
+	  		
 	  		const root = this.$.notifications;
     		while(root.lastChild) root.removeChild(root.lastChild);
     		items.forEach((n) => {
