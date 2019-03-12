@@ -107,7 +107,7 @@ The maximum number of items to display for this entity
 ### content_template (required)
 This controls the message text which is displayed for each item. Any property on the object can be included as part of the text by using the format {{*propertyname*}}
 The example above, '{{title}}' would just include the title property in the text for that item. Markdown is supported so, if you wanted to make the title clickable, you could use
-'[{{title}}]({{url}})' which would result in, for example, "[Post title](https://www.reddit.com/r/*****)".
+'\[{{title}}\]({{url}})' which would result in, for example, "\[Post title\](https://www.reddit.com/r/*****)".
 
 
 
