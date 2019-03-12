@@ -108,9 +108,11 @@ The maximum number of items to display for this entity
 This controls the message text which is displayed for each item. Any property on the object can be included as part of the text by using the format {{*propertyname*}}
 
 Basic example, template generating text:
+
 '{{title}}' -> 'Post title'
 
 Advanced example, template generating Markdown:
+
 '\[{{title}}\]({{url}})' -> "\[Post title\](https://www.reddit.com/r/...)"
 This would be rendered as [Post title](https://www.reddit.com/r/...)
 
