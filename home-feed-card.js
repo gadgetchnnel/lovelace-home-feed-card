@@ -136,12 +136,36 @@ class HomeFeedCard extends Polymer.Element {
 	}
 	
   getEntities() {
-  		let data = this.entities.map(i => {
+  		let data = this.entities.filter(i => i.multiple_items !== true).map(i => {
   		let stateObj = this._hass.states[i.entity];
-	 	return { ...stateObj, display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), item_type: "entity",   };
+  		return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), item_type: "entity",   };
 	 	});
 	 	
 	 	return data;
+	} 
+  
+  applyTemplate(item, template){
+  	var result = template;
+  	//console.log(result);
+  	Object.keys(item).forEach(p => {
+  		result = result.replace("{{" + p + "}}", item[p]);
+  		//console.log(p, result);
+  	});
+  	
+  	return result;
+  }
+  
+  getMultiItemEntities() {
+  		let data = this.entities.filter(i => i.multiple_items === true && i.list_attribute && i.content_template && i.timestamp_property).map(i =>{
+  			let stateObj = this._hass.states[i.entity];
+  			return stateObj.attributes[i.list_attribute].map(p => {
+  				let created = (p[i.timestamp_property]) ? p[i.timestamp_property] : new Date();
+  				let timeStamp = isNaN(created) ? created : new Date(created * 1000);
+  				return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, item_type: "multi_entity",   };
+  			}).slice(0, (i.max_items) ? i.max_items : 5);
+  		});
+	 	
+	 	return [].concat.apply([], data);
 	} 
   
   async getEvents() {
@@ -203,11 +227,12 @@ class HomeFeedCard extends Polymer.Element {
     			case "calendar_event":
     				return item.start.dateTime;
     			case "entity":
+    			case "multi_entity":
     				if(item.attributes.device_class === "timestamp"){
     					return item.state;
     				}
     				else{
-    					return item.last_changed;
+    					return (item.attributes.last_changed ? item.attributes.last_changed : item.last_changed);
     				}
     			default:
     				return new Date().toISOString();
@@ -217,7 +242,7 @@ class HomeFeedCard extends Polymer.Element {
    
     		
    async getFeedItems(){
-   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities()]));
+   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities()]));
    		var now = new Date();
    		allItems = allItems.map(item => {
    			let timeStamp = this.getItemTimestamp(item);
@@ -264,7 +289,7 @@ class HomeFeedCard extends Polymer.Element {
     	
     	if(!this._hass) return;
     	
-    	this.getFeedItems().then(items =>
+    		this.getFeedItems().then(items =>
 	  	{
 	  		if(items.length === 0 && this._config.show_empty === false){
 	  		this.$.card.style.display = "none";
@@ -304,15 +329,28 @@ class HomeFeedCard extends Polymer.Element {
     				var contentText = n.summary;
     				break;
     			case "entity":
+    				if(n.icon)
+    				{
+    					var icon = n.icon;
+    				}
+    				
     				if(n.attributes.device_class === "timestamp"){
     					var contentText = `${n.display_name}`;
-    					var icon = "mdi:clock-outline";
+    					if(!icon) var icon = "mdi:clock-outline";
     				}
     				else{
     					var contentText = `${n.display_name} @ ${n.state}`;
-    					var icon = "mdi:bell";
+    					if(!icon) var icon = "mdi:bell";
+    				}
+    				break;
+    			case "multi_entity":
+    				if(n.icon)
+    				{
+    					var icon = n.icon;
     				}
     				
+    				var contentText = `${n.display_name}`;
+    				if(!icon) var icon = "mdi:bell";
     				break;
     			default:
     				var icon = "mdi:bell";
