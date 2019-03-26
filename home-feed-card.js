@@ -181,7 +181,7 @@ class HomeFeedCard extends Polymer.Element {
           			return this._hass.callApi('get', url);
           		  }));
     	var events = [].concat.apply([], calendars);
-    
+        
     	var data = events.map(i => {
 	 		return { ...i, item_type: "calendar_event" };
 	 	});
@@ -225,7 +225,7 @@ class HomeFeedCard extends Polymer.Element {
     			case "notification":
     				return item.created_at;
     			case "calendar_event":
-    				return item.start.dateTime;
+    				return ((item.start.date) ? item.start.date : (item.start.dateTime) ? item.start.dateTime : item.start);
     			case "entity":
     			case "multi_entity":
     				if(item.attributes.device_class === "timestamp"){
@@ -326,7 +326,7 @@ class HomeFeedCard extends Polymer.Element {
     				break;
     			case "calendar_event":
     				var icon = "mdi:calendar";
-    				var contentText = n.summary;
+    				var contentText = ((n.summary) ? n.summary : n.title);
     				break;
     			case "entity":
     				if(n.icon)
@@ -366,25 +366,51 @@ class HomeFeedCard extends Polymer.Element {
     		//contentItem.style.cssFloat = "left";
     		contentItem.classList.add("markdown-content");
     		itemContent.appendChild(contentItem);
+    		var allDay = false;
+    		if(n.item_type == "calendar_event"){
+    			
+    			if(n.start.date){
+    				allDay = true;
+    			}
+    			else if(n.start.dateTime){
+    				allDay = false;	
+    			}
+    			else{
+    				let start = moment(n.start);
+    				let end = moment(n.end);
+    				let diffInHours = end.diff(start, 'hours');
+    				allDay = (diffInHours >= 24);
+    			}
+    		}
     		
-    		if(n.timeDifference.abs < 60) {
-				// Time difference less than 1 minute, so use a regular div tag with fixed text.
-				// This avoids the time display refreshing too often shortly before or after an item's timestamp
+    		if(allDay){
     			let timeItem = document.createElement("div");
-    			timeItem.innerText = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "Less than 1 minute ago" : "In less than 1 minute";
+    			timeItem.innerText = "Today";
     			timeItem.style.display = "block";
     			itemContent.appendChild(timeItem);
     		}
-    		else {
-    			// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
-    			let timeItem = document.createElement("hui-timestamp-display");
-    			timeItem.hass = this._hass;
-    			timeItem.ts = new Date(n.timestamp);
-    			timeItem.format = "relative";
-    			timeItem.style.display = "block";
-    			itemContent.appendChild(timeItem);
+    		else
+    		{
+    			if(n.timeDifference.abs < 60) {
+					// Time difference less than 1 minute, so use a regular div tag with fixed text.
+					// This avoids the time display refreshing too often shortly before or after an item's timestamp
+    				let timeItem = document.createElement("div");
+    				timeItem.innerText = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "Less than 1 minute ago" : "In less than 1 minute";
+    				timeItem.title = new Date(n.timestamp);
+    				timeItem.style.display = "block";
+    				itemContent.appendChild(timeItem);
+    			}
+    			else {
+    				// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
+    				let timeItem = document.createElement("hui-timestamp-display");
+    				timeItem.hass = this._hass;
+    				timeItem.ts = new Date(n.timestamp);
+    				timeItem.format = "relative";
+    				timeItem.title = new Date(n.timestamp);
+    				timeItem.style.display = "block";
+    				itemContent.appendChild(timeItem);
+    			}
     		}
-    		
     		if(n.item_type == "notification"){
     			//let closeLink = document.createElement("a");
     			//closeLink.href = "#";
@@ -409,10 +435,8 @@ class HomeFeedCard extends Polymer.Element {
   	
   	set hass(hass) {
     	this._hass = hass;
-    	
     	let commands = Object.keys(this._hass.connection.commands).map(k => this._hass.connection.commands[k]);
-    	let subscribed = commands.some(c => c.eventType == "persistent_notifications_updated" && c.eventCallback == this.subscriptionHandler);
-    	
+    	let subscribed = commands.some(c => c.callback == this.subscriptionHandler || c.eventCallback == this.subscriptionHandler);
     	if(!subscribed){
     		this._subscribed = true;
     	    this.refreshNotifications().then(() => {});
