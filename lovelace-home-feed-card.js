@@ -156,17 +156,17 @@ class HomeFeedCard extends Polymer.Element {
   }
   
   getMultiItemEntities() {
-  		let data = this.entities.filter(i => i.multiple_items === true && i.list_attribute && i.content_template && i.timestamp_property).map(i =>{
+  		let data = this.entities.filter(i => i.multiple_items === true && i.list_attribute && i.content_template).map(i =>{
   			let stateObj = this._hass.states[i.entity];
   			return stateObj.attributes[i.list_attribute].map(p => {
-  				let created = (p[i.timestamp_property]) ? p[i.timestamp_property] : new Date();
+  				let created = (i.timestamp_property && p[i.timestamp_property]) ? p[i.timestamp_property] : stateObj.last_changed;
   				let timeStamp = isNaN(created) ? created : new Date(created * 1000);
   				return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, item_type: "multi_entity",   };
   			}).slice(0, (i.max_items) ? i.max_items : 5);
   		});
 	 	
 	 	return [].concat.apply([], data);
-	} 
+	}
   
   async getEvents() {
 	if(!this.calendars || this.calendars.length == 0) return [];
