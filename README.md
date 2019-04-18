@@ -11,16 +11,12 @@ Download all files and place them in the folder **www/custom-lovelace/home-feed-
 Reference the file under resources like this:
 
     resources:
-      - url: /local/custom-lovelace/home-feed-card/home-feed-card.js?v=0.0.0
+      - url: /local/custom-lovelace/home-feed-card/lovelace-home-feed-card.js?v=0.0.0
         type: js
 
 ### With custom_updater
-    custom_updater:
-      card_urls:
-        - https://raw.githubusercontent.com/gadgetchnnel/lovelace-home-feed-card/master/custom_card.json
-
     resources:
-      - url: /customcards/home-feed-card.js
+      - url: /customcards/github/gadgetchnnel/lovelace-home-feed-card.js?track=true
         type: js
 
 ## Configuration
