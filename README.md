@@ -106,8 +106,8 @@ This must be **true** to identify the entity as a multi-item entity
 ### list_attribute (required)
 The attribute on the entity which holds the list of items which should be included in the feed
 
-### timestamp_property (required)
-The property on the object which has the posted time. The property can be either a string in ISO format or a Unix timestamp
+### timestamp_property (optional)
+The property on the object which has the posted time. The property can be either a string in ISO format or a Unix timestamp. If this is not supplied, the modified timestamp of the entity is used.
 
 ### max_items (optional, defaults to 5)
 The maximum number of items to display for this entity
