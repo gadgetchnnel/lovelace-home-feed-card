@@ -3,12 +3,24 @@ A custom Lovelace card for displaying a combination of persistent notifications,
 
 ## Installation
 
+You can install this manually or use [custom_updater](https://github.com/custom-components/custom_updater) if you want easy updating,
+
+### Manually
 Download all files and place them in the folder **www/custom-lovelace/home-feed-card** under your Home Assistant config folder.
 
 Reference the file under resources like this:
 
     resources:
       - url: /local/custom-lovelace/home-feed-card/home-feed-card.js?v=0.0.0
+        type: js
+
+### With custom_updater
+    custom_updater:
+      card_urls:
+        - https://raw.githubusercontent.com/gadgetchnnel/lovelace-home-feed-card/master/custom_card.json
+
+    resources:
+      - url: /customcards/home-feed-card.js
         type: js
 
 ## Configuration
