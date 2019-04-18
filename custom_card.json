@@ -1,7 +1,7 @@
 {
-    "lovelace-home-feed-card": {
-      "version": "0.1.0",
-      "remote_location": "https://raw.githubusercontent.com/gadgetchnnel/lovelace-home-feed-card/master/lovelace-home-feed-card.js",
+    "home-feed-card": {
+      "version": "0.2.0",
+      "remote_location": "https://raw.githubusercontent.com/gadgetchnnel/lovelace-home-feed-card/master/home-feed-card.js",
       "visit_repo": "https://github.com/gadgetchnnel/lovelace-home-feed-card",
       "changelog": "https://github.com/gadgetchnnel/lovelace-home-feed-card"
     }
