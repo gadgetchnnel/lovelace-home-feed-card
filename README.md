@@ -3,6 +3,8 @@ A custom Lovelace card for displaying a combination of persistent notifications,
 
 ## Installation
 
+This requires [card-tools](https://github.com/thomasloven/lovelace-card-tools) to be installed.
+
 You can install this manually or use [custom_updater](https://github.com/custom-components/custom_updater) if you want easy updating,
 
 ### Manually
