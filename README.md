@@ -19,6 +19,8 @@ Reference the file under resources like this:
       - url: /customcards/github/gadgetchnnel/lovelace-home-feed-card.js?track=true
         type: js
 
+Alternatively, you can add https://raw.githubusercontent.com/gadgetchnnel/lovelace-home-feed-card/master/custom_card.json to the card_urls in custom_updater if you want to do it that way.
+
 ## Configuration
 
     type: 'custom:home-feed-card'
