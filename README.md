@@ -21,7 +21,8 @@ Reference the file under resources like this:
 
 Alternatively, you can add https://raw.githubusercontent.com/gadgetchnnel/lovelace-home-feed-card/master/custom_card.json to the card_urls in custom_updater if you want to do it that way.
 
-### Note for Firefox users with versions 0.2.4
+### Version 0.2.4 and Firefox
+
 Version 0.2.4 uses dynamic module imports to import the Moment module. Firefox versions < 66 don't support these by default and you may need to set the `javascript.options.dynamicImport` option in  `about:config` for it to work.
 
 ## Configuration
