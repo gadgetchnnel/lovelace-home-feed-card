@@ -1,11 +1,25 @@
 class HomeFeedCard extends Polymer.Element {
     constructor() {
     	super();
-    	this.pageId = location.pathname.replace(/\//g,"_");
+		this.pageId = location.pathname.replace(/\//g,"_");
+		this.loadedNotifications = false;
+		this.loadModules();
     	this.loadFromCache();
-	 	this.registerHandlers();
   	}
-	
+		
+	loadModules(){
+		try{
+			import("https://unpkg.com/moment@2.24.0/src/moment.js?module").then((module) => {
+			this.moment = module.default;
+			console.log("Loaded Moment module.");
+				});
+			}
+			catch(e){
+				console.log("Error Loading Moment module", e.message);
+				throw new Error("Error Loading Moment module" + e.message);
+		}
+	}
+
     static get template(){
     	return Polymer.html`
     <style>
@@ -82,13 +96,6 @@ class HomeFeedCard extends Polymer.Element {
     `;
     }
     
-    registerHandlers() {
-    	this.subscriptionHandler = () => {
-    		console.info(`%cRefreshing persistent_notifications`, "color: green; font-weight: bold", "");
-    		this.refreshNotifications().then(() => {});
-    	}
-    }
-    
     loadFromCache() {
     	this.events = JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId));
 	 	this.lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId));
@@ -98,10 +105,11 @@ class HomeFeedCard extends Polymer.Element {
     setConfig(config) {
       if(!config)
       	throw new Error("Invalid configuration");
-      this._config = config;
+			this._config = config;
       this.entities = this.processConfigEntities(this._config.entities);
       this.calendars = this._config.calendars;
       setTimeout(() => this._build(), 10);
+      this.notificationMonitor();
     }
   
   processConfigEntities(entities) {
@@ -171,9 +179,9 @@ class HomeFeedCard extends Polymer.Element {
   async getEvents() {
 	if(!this.calendars || this.calendars.length == 0) return [];
 	
-	if(!this.lastUpdate || moment().diff(this.lastUpdate, 'minutes') > 15) {
-		const start = moment().format("YYYY-MM-DDTHH:mm:ss");
-    	const end = moment().startOf('day').add(1, 'days').format("YYYY-MM-DDTHH:mm:ss");
+	if(!this.lastUpdate || (this.moment && this.moment().diff(this.lastUpdate, 'minutes') > 15)) {
+		const start = this.moment().format("YYYY-MM-DDTHH:mm:ss");
+    	const end = this.moment().startOf('day').add(1, 'days').format("YYYY-MM-DDTHH:mm:ss");
 		var calendars = await Promise.all(
         	this.calendars.map(
           		calendar => {
@@ -187,7 +195,7 @@ class HomeFeedCard extends Polymer.Element {
 	 	});
 	 	
 	 	this.events = data;
-	 	this.lastUpdate = moment();
+	 	this.lastUpdate = this.moment();
 	 	localStorage.setItem('home-feed-card-events' + this.pageId,JSON.stringify(this.events));
 	 	localStorage.setItem('home-feed-card-eventsLastUpdate' + this.pageId,JSON.stringify(this.lastUpdate));
 	 	return data;
@@ -376,8 +384,8 @@ class HomeFeedCard extends Polymer.Element {
     				allDay = false;	
     			}
     			else{
-    				let start = moment(n.start);
-    				let end = moment(n.end);
+    				let start = this.moment(n.start);
+    				let end = this.moment(n.end);
     				let diffInHours = end.diff(start, 'hours');
     				allDay = (diffInHours >= 24);
     			}
@@ -433,18 +441,69 @@ class HomeFeedCard extends Polymer.Element {
   	  );
   	}
   	
+  	get notificationButton() {
+      if(!this._notificationButton){
+      	this._notificationButton = this.rootElement.querySelector("hui-notifications-button");
+      }
+      
+      return this._notificationButton;
+    }
+    
+  	get rootElement() {
+      if(!this._root){
+      	this.recursiveWalk(document, node => {
+    		if(node.nodeName == "HUI-ROOT"){
+    			this._root = node.shadowRoot;
+    			return node.shadowRoot;
+    		}
+    		else{
+    			return null;
+    		}
+      	});
+      }
+      return this._root;
+    }
+
+    // Walk the DOM to find element.
+    recursiveWalk(node, func) {
+      let done = func(node);
+      if (done) return true;
+      if ("shadowRoot" in node && node.shadowRoot) {
+        done = this.recursiveWalk(node.shadowRoot, func);
+        if (done) return true;
+      }
+      node = node.firstChild;
+      while (node) {
+        done = this.recursiveWalk(node,func);
+        if (done) return true;
+        node = node.nextSibling;
+      }
+    }
+    
+    notificationMonitor() {
+      let oldNotificationCount = this.notificationCount ? this.notificationCount : "0";
+      
+      let notificationIndicator = this.notificationButton.shadowRoot.querySelector(".indicator div");
+      let notificationCount = notificationIndicator ? notificationIndicator.innerText : "0";
+      if(notificationCount != oldNotificationCount){
+      	this.notificationCount = notificationCount;
+      	this.refreshNotifications().then(() => {
+      		this.loadedNotifications = true;
+      	});
+      }
+      window.setTimeout(
+        () => this.notificationMonitor(),
+        1000
+      );
+    }
+    
   	set hass(hass) {
     	this._hass = hass;
-    	let commands = Object.keys(this._hass.connection.commands).map(k => this._hass.connection.commands[k]);
-    	let subscribed = commands.some(c => c.callback == this.subscriptionHandler || c.eventCallback == this.subscriptionHandler);
-    	if(!subscribed){
-    		this._subscribed = true;
-    	    this.refreshNotifications().then(() => {});
-    	    
-    	    console.info(`%cSubscribing to persistent_notification updates`, "color: green; font-weight: bold", "");
-    	    this._hass.connection.subscribeEvents(this.subscriptionHandler, "persistent_notifications_updated");
+    	if(!this.loadedNotifications){
+    		this.refreshNotifications().then(() => {
+      			this.loadedNotifications = true;
+      		});
     	}
-    	
         this._build();
   	}
   	
