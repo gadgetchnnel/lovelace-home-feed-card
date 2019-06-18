@@ -182,12 +182,18 @@ class HomeFeedCard extends Polymer.Element {
 	if(!this.lastUpdate || (this.moment && this.moment().diff(this.lastUpdate, 'minutes') > 15)) {
 		const start = this.moment().format("YYYY-MM-DDTHH:mm:ss");
     	const end = this.moment().startOf('day').add(1, 'days').format("YYYY-MM-DDTHH:mm:ss");
-		var calendars = await Promise.all(
+		try{
+			var calendars = await Promise.all(
         	this.calendars.map(
           		calendar => {
           			let url = `calendars/${calendar}?start=${start}Z&end=${end}Z`;
           			return this._hass.callApi('get', url);
           		  }));
+        }
+        catch(e){
+        	console.error("Error getting calendar events");
+        	var calendars = [];
+        }
     	var events = [].concat.apply([], calendars);
         
     	var data = events.map(i => {
