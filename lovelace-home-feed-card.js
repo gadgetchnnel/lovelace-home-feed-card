@@ -212,6 +212,8 @@ class HomeFeedCard extends Polymer.Element {
   }
   
    async refreshNotifications() {
+     if(!this._hass) return;
+     
      var response = await this._hass.callWS({type: 'persistent_notification/get'});
      if(this._config.id_filter) {
 		response = response.filter(n => n.notification_id.match(this._config.id_filter));
@@ -488,14 +490,16 @@ class HomeFeedCard extends Polymer.Element {
     
     notificationMonitor() {
       let oldNotificationCount = this.notificationCount ? this.notificationCount : "0";
-      
-      let notificationIndicator = this.notificationButton.shadowRoot.querySelector(".indicator div");
-      let notificationCount = notificationIndicator ? notificationIndicator.innerText : "0";
-      if(notificationCount != oldNotificationCount){
-      	this.notificationCount = notificationCount;
-      	this.refreshNotifications().then(() => {
-      		this.loadedNotifications = true;
-      	});
+      if(this.notificationButton)
+      {
+      	let notificationIndicator = this.notificationButton.shadowRoot.querySelector(".indicator div");
+      	let notificationCount = notificationIndicator ? notificationIndicator.innerText : "0";
+      	if(notificationCount != oldNotificationCount){
+      		this.notificationCount = notificationCount;
+      		this.refreshNotifications().then(() => {
+      			this.loadedNotifications = true;
+      		});
+      	}
       }
       window.setTimeout(
         () => this.notificationMonitor(),
