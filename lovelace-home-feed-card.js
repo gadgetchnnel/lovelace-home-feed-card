@@ -3,6 +3,7 @@ class HomeFeedCard extends Polymer.Element {
     	super();
 		this.pageId = location.pathname.replace(/\//g,"_");
 		this.loadedNotifications = false;
+		this.refreshingNotifications = false;
 		this.loadModules();
     	this.loadFromCache();
   	}
@@ -100,6 +101,7 @@ class HomeFeedCard extends Polymer.Element {
     	this.events = JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId));
 	 	this.lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId));
 	 	this.notifications = JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.pageId));
+	 	this.notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.pageId));
     }
     
     setConfig(config) {
@@ -212,8 +214,12 @@ class HomeFeedCard extends Polymer.Element {
   }
   
    async refreshNotifications() {
-     if(!this._hass) return;
+   	 if(!this._hass) return;
      
+     
+     if(this.refreshingNotifications) return;
+     
+   	 this.refreshingNotifications = true;
      var response = await this._hass.callWS({type: 'persistent_notification/get'});
      if(this._config.id_filter) {
 		response = response.filter(n => n.notification_id.match(this._config.id_filter));
@@ -222,9 +228,15 @@ class HomeFeedCard extends Polymer.Element {
 	 	return { ...i, item_type: "notification" };
 	 });
 	 this.notifications = data;
-	 
 	 localStorage.setItem('home-feed-card-notifications' + this.pageId,JSON.stringify(this.notifications));
 	 
+	 if(this.moment){
+	 	this.notificationsLastUpdate = this.moment();
+	 	localStorage.setItem('home-feed-card-notificationsLastUpdate' + this.pageId,JSON.stringify(this.notificationsLastUpdate));
+	 }
+	 
+	 this.refreshingNotifications = false;
+	 this.loadedNotifications = true;
 	 this._build();
    }
    
@@ -272,6 +284,7 @@ class HomeFeedCard extends Polymer.Element {
   			if (a.timeDifference.abs > b.timeDifference.abs) return 1;
   			return 0;	
    		});
+   		
    		return sorted;
    }
    
@@ -338,7 +351,13 @@ class HomeFeedCard extends Polymer.Element {
     		{
     			case "notification":
     				var icon = "mdi:bell";
-    				var contentText = n.message;
+    				if(this._config.show_notification_title){
+    					var contentText = "<font size='+1em'><b>" + n.title + "</b></font>\n\n" + n.message;
+    				}
+    				else{
+    					var contentText = n.message;
+    				}
+    				
     				break;
     			case "calendar_event":
     				var icon = "mdi:calendar";
@@ -490,17 +509,16 @@ class HomeFeedCard extends Polymer.Element {
     
     notificationMonitor() {
       let oldNotificationCount = this.notificationCount ? this.notificationCount : "0";
-      if(this.notificationButton)
-      {
-      	let notificationIndicator = this.notificationButton.shadowRoot.querySelector(".indicator div");
-      	let notificationCount = notificationIndicator ? notificationIndicator.innerText : "0";
-      	if(notificationCount != oldNotificationCount){
+      if(this._hass){
+        const filtered = Object.keys(this._hass.states).filter(key => key.startsWith("persistent_notification."));
+      	let notificationCount = filtered.length;
+      	
+      	if(notificationCount != oldNotificationCount || (this.moment && this.moment().diff(this.notificationsLastUpdate, 'minutes') > 5)){
       		this.notificationCount = notificationCount;
-      		this.refreshNotifications().then(() => {
-      			this.loadedNotifications = true;
-      		});
+      		this.refreshNotifications().then(() => {});
       	}
       }
+      
       window.setTimeout(
         () => this.notificationMonitor(),
         1000
@@ -509,10 +527,8 @@ class HomeFeedCard extends Polymer.Element {
     
   	set hass(hass) {
     	this._hass = hass;
-    	if(!this.loadedNotifications){
-    		this.refreshNotifications().then(() => {
-      			this.loadedNotifications = true;
-      		});
+    	if((!this.loadedNotifications || !this.notificationsLastUpdate) && this.moment){
+    		this.refreshNotifications().then(() => {});
     	}
         this._build();
   	}
