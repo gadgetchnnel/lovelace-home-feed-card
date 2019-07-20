@@ -76,7 +76,9 @@ Allows overriding the icon of the entity
 This allows the display format for that entity to be customised. The format is {{*propertyname*}}. The available properties are:
 * **display_name** The entity name (friendly name if not overridden with the name option)
 * **state** The state display name (based on device class of entity)
+
 In addition any attribute of the entity can be used (do not prefix with *attributes.*).
+
 Example:
 
     type: 'custom:home-feed-card'
