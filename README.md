@@ -57,10 +57,36 @@ This is a regular expression for filtering persistent notifications by notificat
 A list of entities to display on the feed. These can be displayed as single items, or multiple items from a sensor attribute (see the section on multi-item entities).
 Single item entities are displayed as follows:
 * For sensors with a device_class of "timestamp" the message text is the entity name and the time is the state of the sensor.
-* For other single-valued entities the message text is in the format "*entity name* @ *state*" and the time is the last modified time of the entity.
+* For other single-valued entities the default message text is in the format "*entity name* @ *state*" (but can be customized by using the **content_template** option, see below) and the time is the last modified time of the entity.
+
+Each entity can be just an entity id or an **entity** object, allowing more customisation.
 
 ### show_empty (optional, defaults to true)
 Whether to show the card if there are no items to show
+
+## Entity object
+
+For single-item entities the following options are supported, see the section on multi-item entities for the options available for those.
+
+### name (optional)
+This allows overriding the display name of the entity, otherwise the friendly name is used
+### icon (optional)
+Allows overriding the icon of the entity
+### content_template (optional)
+This allows the display format for that entity to be customised. The format is {{*propertyname*}}. The available properties are:
+* **display_name** The entity name (friendly name if not overridden with the name option)
+* **state** The state display name (based on device class of entity)
+In addition any attribute of the entity can be used (do not prefix with *attributes.*).
+Example:
+
+    type: 'custom:home-feed-card'
+      title: Home Feed
+      show_empty: false
+      id_filter: ^home_feed_.*
+      entities:
+          - entity: device_tracker.my_phone
+            name: Me
+            content_template: '{{display_name}} arrived at {{state}} ({{latitude}},{{longitude}})'
 
 ## Multi-item Entities
 
