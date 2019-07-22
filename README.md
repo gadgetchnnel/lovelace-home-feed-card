@@ -127,11 +127,11 @@ To add multi-item entities for this the following format would be used:
       id_filter: ^home_feed_.*
       entities:
          - entity: sensor.reddit_<name>
-            multiple_items: true
-            list_attribute: posts
-            timestamp_property: created
-            max_items: 5
-            content_template: '{{title}}'
+           multiple_items: true
+           list_attribute: posts
+           timestamp_property: created
+           max_items: 5
+           content_template: '{{title}}'
 
 
 ### multiple_items (required)
