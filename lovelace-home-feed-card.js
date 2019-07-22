@@ -40,12 +40,11 @@ class HomeFeedCard extends Polymer.Element {
     <style>
     	ha-card {
   			padding: 0 16px 16px 16px;
-  			max-height: 30em;
-  			overflow: auto;
 		}
 		#notifications {
 			margin: -4px 0;
-			/*padding-top: 2em;*/
+			max-height: 28em;
+  			overflow: auto;
 		}
 		#notifications > * {
 			margin: 8px 0;
@@ -89,13 +88,9 @@ class HomeFeedCard extends Polymer.Element {
           	padding: 28px 0 12px;
           	display: flex;
           	justify-content: space-between;
-          	position: -webkit-sticky;
-          	position: sticky;
           	top: 0;
           	z-index: 999;
           	width: 100%;
-          	background: var(--ha-card-background, var(--paper-card-background-color, white));
-          	opacity: 1.0;
 		}
 		.header .name {
 			white-space: var(--paper-font-common-nowrap_-_white-space); overflow: var(--paper-font-common-nowrap_-_overflow); text-overflow: var(--paper-font-common-nowrap_-_text-overflow);
