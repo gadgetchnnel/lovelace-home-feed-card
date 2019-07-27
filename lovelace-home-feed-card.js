@@ -43,8 +43,6 @@ class HomeFeedCard extends Polymer.Element {
 		}
 		#notifications {
 			margin: -4px 0;
-			max-height: 28em;
-  			overflow: auto;
 		}
 		#notifications > * {
 			margin: 8px 0;
@@ -154,10 +152,20 @@ class HomeFeedCard extends Polymer.Element {
   		});
 	}
   
+  computeStateDisplay(stateObj, entityConfig){
+  	var state = entityConfig.state_map && entityConfig.state_map[stateObj.state] ? entityConfig.state_map[stateObj.state] : null;
+  	
+  	if(!state){
+  		state = this.helpers.computeStateDisplay(this._hass.localize, stateObj);
+  	}
+  	
+  	return state;
+  }
+  
   getEntities() {
-  		let data = this.entities.filter(i => i.multiple_items !== true).map(i => {
+  		let data = this.entities.filter(i => i.multiple_items !== true && i.include_history !== true).map(i => {
   		let stateObj = this._hass.states[i.entity];
-  		return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), content_template: i.content_template, state: this.helpers.computeStateDisplay(this._hass.localize, stateObj), item_type: "entity",   };
+  		return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), content_template: i.content_template, state: this.computeStateDisplay(stateObj, i), item_type: "entity",   };
 	 	});
 	 	
 	 	return data;
@@ -194,6 +202,26 @@ class HomeFeedCard extends Polymer.Element {
 	 	
 	 	return [].concat.apply([], data);
 	}
+  
+  async getEntityHistoryItems() {
+  	var entity_ids = this.entities.filter(i => i.include_history == true).map(i => i.entity).join();
+  	let history = (await this._hass.callApi('get', 'history/period?filter_entity_id=' + entity_ids));
+  	history = history.map(arr => {
+  				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
+  				let remove_repeats = entityConfig.remove_repeats !== false;
+  				
+  				return arr.filter(i => i.state != "unknown")
+  			  			  .filter((item,index,arr) => {return !arr[index-1] || item.state != arr[index-1].state || remove_repeats == false })
+  			  			  .reverse()
+  			  			  .slice(0,entityConfig.max_history ? entityConfig.max_history : 3)
+  			  			  .map(i => {
+  			  			  	return { ...i, icon: ((entityConfig.icon) ? entityConfig.icon : (i.attributes ? i.attributes.icon : null)), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), item_type: "entity",   };
+  			  			  });
+  			  	 });
+  	let data = [].concat.apply([], history);
+  		
+	return data;
+  }
   
   async getEvents() {
 	if(!this.calendars || this.calendars.length == 0) return [];
@@ -287,7 +315,7 @@ class HomeFeedCard extends Polymer.Element {
    
     		
    async getFeedItems(){
-   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities()]));
+   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities(), this.getEntityHistoryItems()]));
    		var now = new Date();
    		allItems = allItems.map(item => {
    			let timeStamp = this.getItemTimestamp(item);
@@ -345,6 +373,14 @@ class HomeFeedCard extends Polymer.Element {
 	  		this.$.card.style.display = "";
 	  		
 	  		const root = this.$.notifications;
+	  		
+	  		if(this._config.scrollbars_enabled !== false || this._config.max_height){
+	  			root.style.maxHeight = this._config.max_height ? this._config.max_height : "28em";
+	  			root.style.overflow = this._config.scrollbars_enabled !== false ? "auto" : "hidden";
+  			}
+  			
+  			if(this._config.max_item_count) items.splice(this._config.max_item_count);
+  			
     		while(root.lastChild) root.removeChild(root.lastChild);
     		items.forEach((n) => {
     		
@@ -391,9 +427,6 @@ class HomeFeedCard extends Polymer.Element {
     					if(!icon) var icon = "mdi:clock-outline";
     				}
     				else{
-    					if(this.helpers && n.stateObj){
-    						console.log("State Display", this.helpers.computeStateDisplay(this._hass.localize, n.stateObj));
-    					}
     					if(n.content_template){
     						var contentText = this.applyTemplate(n, n.content_template);
     					}
