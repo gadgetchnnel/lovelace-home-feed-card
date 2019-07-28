@@ -13,12 +13,26 @@ class HomeFeedCard extends Polymer.Element {
 			import("https://unpkg.com/moment@2.24.0/src/moment.js?module").then((module) => {
 			this.moment = module.default;
 			console.log("Loaded Moment module.");
+			this.buildIfReady();
 				});
 			}
 			catch(e){
 				console.log("Error Loading Moment module", e.message);
 				throw new Error("Error Loading Moment module" + e.message);
+			}
+		
+		try{
+			import("https://unpkg.com/custom-card-helpers@1.2.2/dist/index.m.js?module").then((module) => {
+			this.helpers = module;
+			console.log("Loaded custom-card-helpers module.");
+			this.buildIfReady();
+				});
+			}
+			catch(e){
+				console.log("Error Loading custom-card-helpers module", e.message);
+				throw new Error("Error Loading custom-card-helpers module" + e.message);
 		}
+		
 	}
 
     static get template(){
@@ -26,12 +40,9 @@ class HomeFeedCard extends Polymer.Element {
     <style>
     	ha-card {
   			padding: 0 16px 16px 16px;
-  			max-height: 30em;
-  			overflow: auto;
 		}
 		#notifications {
 			margin: -4px 0;
-			/*padding-top: 2em;*/
 		}
 		#notifications > * {
 			margin: 8px 0;
@@ -75,13 +86,9 @@ class HomeFeedCard extends Polymer.Element {
           	padding: 28px 0 12px;
           	display: flex;
           	justify-content: space-between;
-          	position: -webkit-sticky;
-          	position: sticky;
           	top: 0;
           	z-index: 999;
           	width: 100%;
-          	background: var(--ha-card-background, var(--paper-card-background-color, white));
-          	opacity: 1.0;
 		}
 		.header .name {
 			white-space: var(--paper-font-common-nowrap_-_white-space); overflow: var(--paper-font-common-nowrap_-_overflow); text-overflow: var(--paper-font-common-nowrap_-_text-overflow);
@@ -104,13 +111,20 @@ class HomeFeedCard extends Polymer.Element {
 	 	this.notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.pageId));
     }
     
+    clearCache() {
+    	localStorage.removeItem('home-feed-card-events' + this.pageId);
+	 	localStorage.removeItem('home-feed-card-eventsLastUpdate' + this.pageId);
+	 	localStorage.removeItem('home-feed-card-notifications' + this.pageId);
+	 	localStorage.removeItem('home-feed-card-notificationsLastUpdate' + this.pageId);
+    }
+    
     setConfig(config) {
       if(!config)
       	throw new Error("Invalid configuration");
 			this._config = config;
       this.entities = this.processConfigEntities(this._config.entities);
       this.calendars = this._config.calendars;
-      setTimeout(() => this._build(), 10);
+      setTimeout(() => this.buildIfReady(), 10);
       this.notificationMonitor();
     }
   
@@ -144,15 +158,25 @@ class HomeFeedCard extends Polymer.Element {
 			return entityConf;
   		});
 	}
-	
+  
+  computeStateDisplay(stateObj, entityConfig){
+  	var state = entityConfig.state_map && entityConfig.state_map[stateObj.state] ? entityConfig.state_map[stateObj.state] : null;
+  	
+  	if(!state){
+  		state = this.helpers.computeStateDisplay(this._hass.localize, stateObj);
+  	}
+  	
+  	return state;
+  }
+  
   getEntities() {
-  		let data = this.entities.filter(i => i.multiple_items !== true).map(i => {
+  		let data = this.entities.filter(i => i.multiple_items !== true && i.include_history !== true).map(i => {
   		let stateObj = this._hass.states[i.entity];
-  		return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), item_type: "entity",   };
+  		return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), content_template: i.content_template, state: this.computeStateDisplay(stateObj, i), item_type: "entity",   };
 	 	});
 	 	
 	 	return data;
-	} 
+	}
   
   applyTemplate(item, template){
   	var result = template;
@@ -161,6 +185,14 @@ class HomeFeedCard extends Polymer.Element {
   		result = result.replace("{{" + p + "}}", item[p]);
   		//console.log(p, result);
   	});
+  	
+  	if(item.attributes)
+  	{
+  		Object.keys(item.attributes).forEach(p => {
+  			result = result.replace("{{" + p + "}}", item.attributes[p]);
+  			//console.log(p, result);
+  		});
+  	}
   	
   	return result;
   }
@@ -178,17 +210,38 @@ class HomeFeedCard extends Polymer.Element {
 	 	return [].concat.apply([], data);
 	}
   
+  async getEntityHistoryItems() {
+  	var entity_ids = this.entities.filter(i => i.include_history == true).map(i => i.entity).join();
+  	let history = (await this._hass.callApi('get', 'history/period?filter_entity_id=' + entity_ids));
+  	history = history.map(arr => {
+  				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
+  				let remove_repeats = entityConfig.remove_repeats !== false;
+  				
+  				return arr.filter(i => i.state != "unknown")
+  			  			  .filter((item,index,arr) => {return !arr[index-1] || item.state != arr[index-1].state || remove_repeats == false })
+  			  			  .reverse()
+  			  			  .slice(0,entityConfig.max_history ? entityConfig.max_history : 3)
+  			  			  .map(i => {
+  			  			  	return { ...i, icon: ((entityConfig.icon) ? entityConfig.icon : (i.attributes ? i.attributes.icon : null)), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), item_type: "entity",   };
+  			  			  });
+  			  	 });
+  	let data = [].concat.apply([], history);
+  		
+	return data;
+  }
+  
   async getEvents() {
 	if(!this.calendars || this.calendars.length == 0) return [];
 	
 	if(!this.lastUpdate || (this.moment && this.moment().diff(this.lastUpdate, 'minutes') > 15)) {
-		const start = this.moment().format("YYYY-MM-DDTHH:mm:ss");
-    	const end = this.moment().startOf('day').add(1, 'days').format("YYYY-MM-DDTHH:mm:ss");
+		const start = this.moment.utc().format("YYYY-MM-DDTHH:mm:ss");
+    	const end = this.moment.utc().startOf('day').add(1, 'days').format("YYYY-MM-DDTHH:mm:ss");
 		try{
 			var calendars = await Promise.all(
         	this.calendars.map(
           		calendar => {
           			let url = `calendars/${calendar}?start=${start}Z&end=${end}Z`;
+          			console.log("Calendar URL",url);
           			return this._hass.callApi('get', url);
           		  }));
         }
@@ -237,7 +290,7 @@ class HomeFeedCard extends Polymer.Element {
 	 
 	 this.refreshingNotifications = false;
 	 this.loadedNotifications = true;
-	 this._build();
+	 this.buildIfReady();
    }
    
    getNotifications() {
@@ -270,7 +323,7 @@ class HomeFeedCard extends Polymer.Element {
    
     		
    async getFeedItems(){
-   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities()]));
+   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities(), this.getEntityHistoryItems()]));
    		var now = new Date();
    		allItems = allItems.map(item => {
    			let timeStamp = this.getItemTimestamp(item);
@@ -328,6 +381,14 @@ class HomeFeedCard extends Polymer.Element {
 	  		this.$.card.style.display = "";
 	  		
 	  		const root = this.$.notifications;
+	  		
+	  		if(this._config.scrollbars_enabled !== false || this._config.max_height){
+	  			root.style.maxHeight = this._config.max_height ? this._config.max_height : "28em";
+	  			root.style.overflow = this._config.scrollbars_enabled !== false ? "auto" : "hidden";
+  			}
+  			
+  			if(this._config.max_item_count) items.splice(this._config.max_item_count);
+  			
     		while(root.lastChild) root.removeChild(root.lastChild);
     		items.forEach((n) => {
     		
@@ -374,7 +435,12 @@ class HomeFeedCard extends Polymer.Element {
     					if(!icon) var icon = "mdi:clock-outline";
     				}
     				else{
-    					var contentText = `${n.display_name} @ ${n.state}`;
+    					if(n.content_template){
+    						var contentText = this.applyTemplate(n, n.content_template);
+    					}
+    					else{
+    						var contentText = `${n.display_name} @ ${n.state}`;
+    					}
     					if(!icon) var icon = "mdi:bell";
     				}
     				break;
@@ -525,12 +591,18 @@ class HomeFeedCard extends Polymer.Element {
       );
     }
     
-  	set hass(hass) {
-    	this._hass = hass;
+    buildIfReady(){
+    	if(!this._hass || !this.moment || !this.helpers) return;
+    	
     	if((!this.loadedNotifications || !this.notificationsLastUpdate) && this.moment){
     		this.refreshNotifications().then(() => {});
     	}
         this._build();
+    }
+    
+  	set hass(hass) {
+    	this._hass = hass;
+    	this.buildIfReady();
   	}
   	
   	getCardSize() {
