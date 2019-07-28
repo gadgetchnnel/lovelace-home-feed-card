@@ -111,6 +111,13 @@ class HomeFeedCard extends Polymer.Element {
 	 	this.notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.pageId));
     }
     
+    clearCache() {
+    	localStorage.removeItem('home-feed-card-events' + this.pageId);
+	 	localStorage.removeItem('home-feed-card-eventsLastUpdate' + this.pageId);
+	 	localStorage.removeItem('home-feed-card-notifications' + this.pageId);
+	 	localStorage.removeItem('home-feed-card-notificationsLastUpdate' + this.pageId);
+    }
+    
     setConfig(config) {
       if(!config)
       	throw new Error("Invalid configuration");
@@ -227,13 +234,14 @@ class HomeFeedCard extends Polymer.Element {
 	if(!this.calendars || this.calendars.length == 0) return [];
 	
 	if(!this.lastUpdate || (this.moment && this.moment().diff(this.lastUpdate, 'minutes') > 15)) {
-		const start = this.moment().format("YYYY-MM-DDTHH:mm:ss");
-    	const end = this.moment().startOf('day').add(1, 'days').format("YYYY-MM-DDTHH:mm:ss");
+		const start = this.moment.utc().format("YYYY-MM-DDTHH:mm:ss");
+    	const end = this.moment.utc().startOf('day').add(1, 'days').format("YYYY-MM-DDTHH:mm:ss");
 		try{
 			var calendars = await Promise.all(
         	this.calendars.map(
           		calendar => {
           			let url = `calendars/${calendar}?start=${start}Z&end=${end}Z`;
+          			console.log("Calendar URL",url);
           			return this._hass.callApi('get', url);
           		  }));
         }
