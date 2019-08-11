@@ -37,10 +37,12 @@ Version 0.2.4 uses dynamic module imports to import the Moment module. Firefox v
         - calendar.home_calendar
         - calendar.work_calendar
       id_filter: ^home_feed_.*
+      more_info_on_tap: true
       entities:
           - sensor.next_alarm_time
           - entity: sensor.bin_collection
             name: Next Bin Collection
+            more_info_on_tap: false
           - entity: sensor.reddit_help
             multiple_items: true
             list_attribute: posts
@@ -76,6 +78,11 @@ The maximum height of the feed in CSS format (e.g. "100px", "20em", etc.). When 
 ### max_item_count (optional, defaults to unlimited)
 The maximum number of items to show in the feed, useful if scrollbars are disabled.
 
+### more_info_on_tap (optional, defaults to false)
+When this is true, tapping/clicking and entity will display the more-info dialogue. This can be overridden for individual entities (see later).
+
+Note: This won't work for multi-item entities. It will work for entities using the **include_history** option but, due to limitations of this dialogue, it will always show the latest state of the entity.
+
 ## Entity object
 
 For single-item entities the following options are supported, see the section on multi-item entities for the options available for those.
@@ -106,6 +113,22 @@ This can be disabled by setting this to false.
 
 ### state_map (optional)
 This allows custom mappings of states to display names, to override the device_class based mappings. In the example below this is used to map the "not_home" state to "Unknown Destination" instead of the default "Away".
+
+### exclude_states (optional)
+A list of states to exclude. By default this is just "unknown". For example:
+    entities:
+      - entity: sensor.front_door
+        name: Front Door
+        exclude_states:
+          - "off"
+          - "unknown"
+
+### format (optional, defaults to "relative")
+How the timestamp should be formatted.
+Valid values are: relative, total, date, time and datetime.
+
+### more_info_on_tap (optional)
+This is the same as the option of the same name at the top level. This allows for this setting to be overridden at the entity level.
 
 Example:
 
@@ -165,19 +188,6 @@ To add multi-item entities for this the following format would be used:
            timestamp_property: created
            max_items: 5
            content_template: '{{title}}'
-
-### exclude_states (optional)
-A list of states to exclude. By default this is just "unknown". For example:
-    entities:
-      - entity: sensor.front_door
-        name: Front Door
-        exclude_states:
-          - "off"
-          - "unknown"
-
-### format (optional, defaults to "relative")
-How the timestamp should be formatted.
-Valid values are: relative, total, date, time and datetime.
 
 ### multiple_items (required)
 This must be **true** to identify the entity as a multi-item entity
