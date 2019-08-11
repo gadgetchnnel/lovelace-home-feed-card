@@ -172,7 +172,7 @@ class HomeFeedCard extends Polymer.Element {
   		let stateObj = this._hass.states[i.entity];
   		if(!i.exclude_states.includes(stateObj.state))
   		{
-  			return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), content_template: i.content_template, state: this.computeStateDisplay(stateObj, i), item_type: "entity",   };
+  			return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), format: (i.format != null ? i.format : "relative"), content_template: i.content_template, state: this.computeStateDisplay(stateObj, i), item_type: "entity",   };
 	 	}
 	 	else{
 	 		return null;
@@ -499,7 +499,7 @@ class HomeFeedCard extends Polymer.Element {
     		}
     		else
     		{
-    			if(n.timeDifference.abs < 60) {
+    			if(n.timeDifference.abs < 60 && n.format == "relative") {
 					// Time difference less than 1 minute, so use a regular div tag with fixed text.
 					// This avoids the time display refreshing too often shortly before or after an item's timestamp
     				let timeItem = document.createElement("div");
@@ -513,7 +513,7 @@ class HomeFeedCard extends Polymer.Element {
     				let timeItem = document.createElement("hui-timestamp-display");
     				timeItem.hass = this._hass;
     				timeItem.ts = new Date(n.timestamp);
-    				timeItem.format = "relative";
+    				timeItem.format = n.format;
     				timeItem.title = new Date(n.timestamp);
     				timeItem.style.display = "block";
     				itemContent.appendChild(timeItem);
