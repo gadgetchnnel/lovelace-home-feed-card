@@ -166,6 +166,18 @@ To add multi-item entities for this the following format would be used:
            max_items: 5
            content_template: '{{title}}'
 
+### exclude_states (optional)
+A list of states to exclude. By default this is just "unknown". For example:
+    entities:
+      - entity: sensor.front_door
+        name: Front Door
+        exclude_states:
+          - "off"
+          - "unknown"
+
+### format (optional, defaults to "relative")
+How the timestamp should be formatted.
+Valid values are: relative, total, date, time and datetime.
 
 ### multiple_items (required)
 This must be **true** to identify the entity as a multi-item entity
