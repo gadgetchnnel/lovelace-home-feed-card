@@ -224,7 +224,7 @@ class HomeFeedCard extends Polymer.Element {
   			  			  .reverse()
   			  			  .slice(0,entityConfig.max_history ? entityConfig.max_history : 3)
   			  			  .map(i => {
-  			  			  	return { ...i, icon: ((entityConfig.icon) ? entityConfig.icon : (i.attributes ? i.attributes.icon : null)), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), item_type: "entity",   };
+  			  			  	return { ...i, icon: ((entityConfig.icon) ? entityConfig.icon : (i.attributes ? i.attributes.icon : null)), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), item_type: "entity",   };
   			  			  });
   			  	 });
   	this.entityHistory = [].concat.apply([], history);
