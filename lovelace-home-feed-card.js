@@ -105,23 +105,31 @@ class HomeFeedCard extends Polymer.Element {
     }
     
     loadFromCache() {
+    	//console.log("Loading from cache");
     	this.events = JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId));
 	 	this.lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId));
 	 	this.notifications = JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.pageId));
 	 	this.notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.pageId));
+	 	this.entityHistory = JSON.parse(localStorage.getItem('home-feed-card-history' + this.pageId));
+	 	//console.log("Events Count",this.events.length);
+	 	//console.log("Notifications Count",this.notifications.length);
+	 	//console.log("Entity History Count",this.entityHistory.length);
+	 	//console.log("Entity History",this.entityHistory);
     }
     
     clearCache() {
+    	console.log("Clearing cache");
     	localStorage.removeItem('home-feed-card-events' + this.pageId);
 	 	localStorage.removeItem('home-feed-card-eventsLastUpdate' + this.pageId);
 	 	localStorage.removeItem('home-feed-card-notifications' + this.pageId);
 	 	localStorage.removeItem('home-feed-card-notificationsLastUpdate' + this.pageId);
+	 	localStorage.removeItem('home-feed-card-history' + this.pageId);
     }
     
     setConfig(config) {
       if(!config)
       	throw new Error("Invalid configuration");
-			this._config = config;
+	  this._config = config;
       this.entities = this.processConfigEntities(this._config.entities);
       this.calendars = this._config.calendars;
       setTimeout(() => this.buildIfReady(), 10);
@@ -210,7 +218,9 @@ class HomeFeedCard extends Polymer.Element {
 	 	return [].concat.apply([], data);
 	}
   
-  async getEntityHistoryItems() {
+  async refreshEntityHistory() {
+  	if(this._config.entities.length == 0) return;
+  	
   	var entity_ids = this.entities.filter(i => i.include_history == true).map(i => i.entity).join();
   	let history = (await this._hass.callApi('get', 'history/period?filter_entity_id=' + entity_ids));
   	history = history.map(arr => {
@@ -225,9 +235,9 @@ class HomeFeedCard extends Polymer.Element {
   			  			  	return { ...i, icon: ((entityConfig.icon) ? entityConfig.icon : (i.attributes ? i.attributes.icon : null)), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), item_type: "entity",   };
   			  			  });
   			  	 });
-  	let data = [].concat.apply([], history);
-  		
-	return data;
+  	this.entityHistory = [].concat.apply([], history);
+  	localStorage.setItem('home-feed-card-history' + this.pageId,JSON.stringify(this.entityHistory));
+	this.buildIfReady();
   }
   
   async getEvents() {
@@ -241,7 +251,6 @@ class HomeFeedCard extends Polymer.Element {
         	this.calendars.map(
           		calendar => {
           			let url = `calendars/${calendar}?start=${start}Z&end=${end}Z`;
-          			console.log("Calendar URL",url);
           			return this._hass.callApi('get', url);
           		  }));
         }
@@ -297,6 +306,12 @@ class HomeFeedCard extends Polymer.Element {
    	 if(!this.notifications) return [];
    	 
      return this.notifications;
+   }
+   
+   getEntityHistoryItems() {
+   	 if(!this.entityHistory) return [];
+   	 
+     return this.entityHistory;
    }
    
    getItemTimestamp(item)
@@ -602,6 +617,9 @@ class HomeFeedCard extends Polymer.Element {
     
   	set hass(hass) {
     	this._hass = hass;
+    	if(this.moment && this.helpers){
+    		this.refreshEntityHistory().then(() => {});
+    	}
     	this.buildIfReady();
   	}
   	
