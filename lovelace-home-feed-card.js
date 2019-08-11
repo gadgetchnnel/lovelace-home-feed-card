@@ -105,20 +105,14 @@ class HomeFeedCard extends Polymer.Element {
     }
     
     loadFromCache() {
-    	//console.log("Loading from cache");
     	this.events = JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId));
 	 	this.lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId));
 	 	this.notifications = JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.pageId));
 	 	this.notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.pageId));
 	 	this.entityHistory = JSON.parse(localStorage.getItem('home-feed-card-history' + this.pageId));
-	 	//console.log("Events Count",this.events.length);
-	 	//console.log("Notifications Count",this.notifications.length);
-	 	//console.log("Entity History Count",this.entityHistory.length);
-	 	//console.log("Entity History",this.entityHistory);
     }
     
     clearCache() {
-    	console.log("Clearing cache");
     	localStorage.removeItem('home-feed-card-events' + this.pageId);
 	 	localStorage.removeItem('home-feed-card-eventsLastUpdate' + this.pageId);
 	 	localStorage.removeItem('home-feed-card-notifications' + this.pageId);
@@ -188,17 +182,14 @@ class HomeFeedCard extends Polymer.Element {
   
   applyTemplate(item, template){
   	var result = template;
-  	//console.log(result);
   	Object.keys(item).forEach(p => {
   		result = result.replace("{{" + p + "}}", item[p]);
-  		//console.log(p, result);
   	});
   	
   	if(item.attributes)
   	{
   		Object.keys(item.attributes).forEach(p => {
   			result = result.replace("{{" + p + "}}", item.attributes[p]);
-  			//console.log(p, result);
   		});
   	}
   	
