@@ -138,22 +138,18 @@ class HomeFeedCard extends Polymer.Element {
   		}
   		
 		return entities.map((entityConf, index) => {
-			if (
-      			typeof entityConf === "object" &&
-      			!Array.isArray(entityConf) &&
-      			entityConf.type
-    			)
-    		{
-      			return entityConf;
-    		}
 			if (typeof entityConf === "string") {
-      			entityConf = { entity: entityConf };
+      			entityConf = { entity: entityConf, exclude_states: ["unknown"] };
     		} else if (typeof entityConf === "object" && !Array.isArray(entityConf)) {
       			if (!entityConf.entity) {
         			throw new Error(
           				`Entity object at position ${index} is missing entity field.`
         			);
-      			}
+        		 }
+        		 
+        		 if(!entityConf.exclude_states){
+        		 	entityConf.exclude_states = ["unknown"];
+        		 }
     		} else {
       			throw new Error(`Invalid entity specified at position ${index}.`);
     		}
@@ -174,10 +170,16 @@ class HomeFeedCard extends Polymer.Element {
   getEntities() {
   		let data = this.entities.filter(i => i.multiple_items !== true && i.include_history !== true).map(i => {
   		let stateObj = this._hass.states[i.entity];
-  		return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), content_template: i.content_template, state: this.computeStateDisplay(stateObj, i), item_type: "entity",   };
+  		if(!i.exclude_states.includes(stateObj.state))
+  		{
+  			return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), content_template: i.content_template, state: this.computeStateDisplay(stateObj, i), item_type: "entity",   };
+	 	}
+	 	else{
+	 		return null;
+	 	}
 	 	});
 	 	
-	 	return data;
+	 	return data.filter(entity => entity != null);
 	}
   
   applyTemplate(item, template){
@@ -217,8 +219,7 @@ class HomeFeedCard extends Polymer.Element {
   	history = history.map(arr => {
   				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
   				let remove_repeats = entityConfig.remove_repeats !== false;
-  				
-  				return arr.filter(i => i.state != "unknown")
+  				return arr.filter(i => !entityConfig.exclude_states.includes(i.state))
   			  			  .filter((item,index,arr) => {return !arr[index-1] || item.state != arr[index-1].state || remove_repeats == false })
   			  			  .reverse()
   			  			  .slice(0,entityConfig.max_history ? entityConfig.max_history : 3)
