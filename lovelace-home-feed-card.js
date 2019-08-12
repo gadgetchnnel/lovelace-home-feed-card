@@ -204,7 +204,7 @@ class HomeFeedCard extends Polymer.Element {
   			return stateObj.attributes[i.list_attribute].map(p => {
   				let created = (i.timestamp_property && p[i.timestamp_property]) ? p[i.timestamp_property] : stateObj.last_changed;
   				let timeStamp = isNaN(created) ? created : new Date(created * 1000);
-  				return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, item_type: "multi_entity",   };
+  				return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), format: (i.format != null ? i.format : "relative"), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, item_type: "multi_entity",   };
   			}).slice(0, (i.max_items) ? i.max_items : 5);
   		});
 	 	
@@ -253,7 +253,7 @@ class HomeFeedCard extends Polymer.Element {
     	var events = [].concat.apply([], calendars);
         
     	var data = events.map(i => {
-	 		return { ...i, item_type: "calendar_event" };
+	 		return { ...i, format: "relative", item_type: "calendar_event" };
 	 	});
 	 	
 	 	this.events = data;
@@ -279,7 +279,7 @@ class HomeFeedCard extends Polymer.Element {
 		response = response.filter(n => n.notification_id.match(this._config.id_filter));
 	 }
 	 let data = response.map(i => {
-	 	return { ...i, item_type: "notification" };
+	 	return { ...i, format: "relative", item_type: "notification" };
 	 });
 	 this.notifications = data;
 	 localStorage.setItem('home-feed-card-notifications' + this.pageId,JSON.stringify(this.notifications));
