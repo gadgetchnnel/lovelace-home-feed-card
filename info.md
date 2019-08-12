@@ -1,4 +1,4 @@
-{% if selected_tag == "development" %}
+{% if selected_tag == "dev" %}
 
 NB! This is a development version!
 {% elif 'b' in selected_tag %}
