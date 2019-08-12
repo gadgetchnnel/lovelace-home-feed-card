@@ -1,8 +1,6 @@
 {% if selected_tag == "dev" %}
-
 NB! This is a development version!
 {% elif 'b' in selected_tag %}
-
 NB! This is a beta version!
 {% endif %} 
 
