@@ -167,12 +167,26 @@ class HomeFeedCard extends Polymer.Element {
   	return state;
   }
   
+  getIcon(stateObj, icon){
+	
+	if(icon) {
+		return icon;
+	}
+	
+	if(stateObj.attributes && stateObj.attributes.icon)
+	{
+		return stateObj.attributes.icon
+	}
+	
+  	return icon;
+  }
+  
   getEntities() {
   		let data = this.entities.filter(i => i.multiple_items !== true && i.include_history !== true).map(i => {
   		let stateObj = this._hass.states[i.entity];
   		if(!i.exclude_states.includes(stateObj.state))
   		{
-  			return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), entity: i.entity, display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), format: (i.format != null ? i.format : "relative"), more_info_on_tap: i.more_info_on_tap, content_template: i.content_template, state: this.computeStateDisplay(stateObj, i), item_type: "entity",   };
+  			return { ...stateObj, icon: this.getIcon(stateObj, i.icon), entity: i.entity, display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), format: (i.format != null ? i.format : "relative"), more_info_on_tap: i.more_info_on_tap, content_template: i.content_template, state: this.computeStateDisplay(stateObj, i), stateObj: stateObj, item_type: "entity",   };
 	 	}
 	 	else{
 	 		return null;
@@ -201,15 +215,23 @@ class HomeFeedCard extends Polymer.Element {
   getMultiItemEntities() {
   		let data = this.entities.filter(i => i.multiple_items === true && i.list_attribute && i.content_template).map(i =>{
   			let stateObj = this._hass.states[i.entity];
+  			let icon = this.getIcon(stateObj, i.icon)
   			return stateObj.attributes[i.list_attribute].map(p => {
   				let created = (i.timestamp_property && p[i.timestamp_property]) ? p[i.timestamp_property] : stateObj.last_changed;
   				let timeStamp = isNaN(created) ? created : new Date(created * 1000);
-  				return { ...stateObj, icon: ((i.icon) ? i.icon : stateObj.attributes.icon), format: (i.format != null ? i.format : "relative"), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, item_type: "multi_entity",   };
+  				return { ...stateObj, icon: icon, format: (i.format != null ? i.format : "relative"), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, stateObj: stateObj, item_type: "multi_entity",   };
   			}).slice(0, (i.max_items) ? i.max_items : 5);
   		});
 	 	
 	 	return [].concat.apply([], data);
 	}
+  
+  getHistoryState(stateObj, state){
+  	var newStateObj = {};
+  	Object.assign(newStateObj, stateObj);
+  	newStateObj.state = state;
+  	return newStateObj;
+  }
   
   async refreshEntityHistory() {
   	if(this._config.entities.length == 0) return;
@@ -218,13 +240,14 @@ class HomeFeedCard extends Polymer.Element {
   	let history = (await this._hass.callApi('get', 'history/period?filter_entity_id=' + entity_ids));
   	history = history.map(arr => {
   				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
+  				let stateObj = this._hass.states[entityConfig.entity];
   				let remove_repeats = entityConfig.remove_repeats !== false;
   				return arr.filter(i => !entityConfig.exclude_states.includes(i.state))
   			  			  .filter((item,index,arr) => {return !arr[index-1] || item.state != arr[index-1].state || remove_repeats == false })
   			  			  .reverse()
   			  			  .slice(0,entityConfig.max_history ? entityConfig.max_history : 3)
   			  			  .map(i => {
-  			  			  	return { ...i, icon: ((entityConfig.icon) ? entityConfig.icon : (i.attributes ? i.attributes.icon : null)), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), more_info_on_tap: entityConfig.more_info_on_tap, content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), item_type: "entity",   };
+  			  			  	return { ...i, icon: this.getIcon(stateObj, entityConfig.icon), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), more_info_on_tap: entityConfig.more_info_on_tap, content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), stateObj: this.getHistoryState(stateObj,i.state), item_type: "entity",   };
   			  			  });
   			  	 });
   	this.entityHistory = [].concat.apply([], history);
@@ -437,10 +460,7 @@ class HomeFeedCard extends Polymer.Element {
     				var contentText = ((n.summary) ? n.summary : n.title);
     				break;
     			case "entity":
-    				if(n.icon)
-    				{
-    					var icon = n.icon;
-    				}
+    				var icon = n.icon;
     				
     				if(n.attributes.device_class === "timestamp"){
     					var contentText = `${n.display_name}`;
@@ -453,25 +473,29 @@ class HomeFeedCard extends Polymer.Element {
     					else{
     						var contentText = `${n.display_name} @ ${n.state}`;
     					}
-    					if(!icon) var icon = "mdi:bell";
     				}
     				break;
     			case "multi_entity":
-    				if(n.icon)
-    				{
-    					var icon = n.icon;
-    				}
+    				var icon = n.icon;
     				
     				var contentText = `${n.display_name}`;
-    				if(!icon) var icon = "mdi:bell";
+    				
     				break;
     			default:
     				var icon = "mdi:bell";
     				var contentText = "Unknown Item Type";
     		}
     		
-    		let iconElement = document.createElement("ha-icon");
-    		iconElement.icon = icon;
+    			
+    		if(!n.stateObj && !icon){ 
+    			icon = "mdi:bell";
+    		}
+    		
+    		let iconElement = document.createElement("state-badge");
+    		iconElement.hass = this._hass;
+    		
+    		iconElement.stateObj = n.stateObj ? n.stateObj : {"entity_id": "", "state": "unknown", "attributes":{}};
+    		iconElement.overrideIcon = icon;
     		itemLeft.appendChild(iconElement);
     		
     		let contentItem = document.createElement("ha-markdown");
