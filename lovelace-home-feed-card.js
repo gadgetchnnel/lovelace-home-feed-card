@@ -76,6 +76,11 @@ class HomeFeedCard extends Polymer.Element {
     		height: 100%;
 		}
 		
+		state-badge {
+			margin-top: -10px;
+			margin-left: -10px;
+		}
+		
 		.item-content ha-markdown p {
 			margin-top: 0px;
 		}
@@ -247,7 +252,7 @@ class HomeFeedCard extends Polymer.Element {
   			  			  .reverse()
   			  			  .slice(0,entityConfig.max_history ? entityConfig.max_history : 3)
   			  			  .map(i => {
-  			  			  	return { ...i, icon: this.getIcon(stateObj, entityConfig.icon), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), more_info_on_tap: entityConfig.more_info_on_tap, content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), stateObj: this.getHistoryState(stateObj,i.state), item_type: "entity",   };
+  			  			  	return { ...i, icon: this.getIcon(stateObj, entityConfig.icon), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), more_info_on_tap: entityConfig.more_info_on_tap, content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), latestStateObj: stateObj,  stateObj: this.getHistoryState(stateObj,i.state), item_type: "entity_history",   };
   			  			  });
   			  	 });
   	this.entityHistory = [].concat.apply([], history);
@@ -338,6 +343,7 @@ class HomeFeedCard extends Polymer.Element {
     			case "calendar_event":
     				return ((item.start.date) ? item.start.date : (item.start.dateTime) ? item.start.dateTime : item.start);
     			case "entity":
+    			case "entity_history":
     			case "multi_entity":
     				if(item.attributes.device_class === "timestamp"){
     					return item.state;
@@ -379,8 +385,8 @@ class HomeFeedCard extends Polymer.Element {
   }
   
   _handleClick(ev, item) {
-   		this.helpers.handleClick(this, this._hass, {"entity":item.entity_id, 
-   		"tap_action":{"action":"more-info"}}, false, false); 
+  		this.helpers.handleClick(this, this._hass, {"entity":item.entity_id, 
+   			"tap_action":{"action":"more-info"}}, false, false); 
 	}
   
   	_build() {
@@ -460,6 +466,7 @@ class HomeFeedCard extends Polymer.Element {
     				var contentText = ((n.summary) ? n.summary : n.title);
     				break;
     			case "entity":
+    			case "entity_history":
     				var icon = n.icon;
     				
     				if(n.attributes.device_class === "timestamp"){
@@ -504,7 +511,7 @@ class HomeFeedCard extends Polymer.Element {
     		contentItem.classList.add("markdown-content");
     		itemContent.appendChild(contentItem);
     		
-    		if(n.item_type == "entity"){
+    		if(n.item_type == "entity" || n.item_type == "entity_history"){
     			let more_info_on_tap = (typeof n.more_info_on_tap !== 'undefined') ? n.more_info_on_tap 
     				: this._config.more_info_on_tap;
     			
