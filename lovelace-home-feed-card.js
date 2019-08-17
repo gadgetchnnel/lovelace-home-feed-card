@@ -231,10 +231,12 @@ class HomeFeedCard extends Polymer.Element {
 	 	return [].concat.apply([], data);
 	}
   
-  getHistoryState(stateObj, state){
+  getHistoryState(stateObj, item){
   	var newStateObj = {};
   	Object.assign(newStateObj, stateObj);
-  	newStateObj.state = state;
+  	newStateObj.state = item.state;
+  	newStateObj.last_changed = item.last_changed;
+  	newStateObj.last_updated = item.last_updated;
   	return newStateObj;
   }
   
@@ -247,12 +249,13 @@ class HomeFeedCard extends Polymer.Element {
   				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
   				let stateObj = this._hass.states[entityConfig.entity];
   				let remove_repeats = entityConfig.remove_repeats !== false;
-  				return arr.filter(i => !entityConfig.exclude_states.includes(i.state))
+  				return arr.filter(i => i.state != "unknown")
   			  			  .filter((item,index,arr) => {return !arr[index-1] || item.state != arr[index-1].state || remove_repeats == false })
+  			  			  .filter(i => !entityConfig.exclude_states.includes(i.state))
   			  			  .reverse()
   			  			  .slice(0,entityConfig.max_history ? entityConfig.max_history : 3)
   			  			  .map(i => {
-  			  			  	return { ...i, icon: this.getIcon(stateObj, entityConfig.icon), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), more_info_on_tap: entityConfig.more_info_on_tap, content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), latestStateObj: stateObj,  stateObj: this.getHistoryState(stateObj,i.state), item_type: "entity_history",   };
+  			  			  	return { ...i, icon: this.getIcon(stateObj, entityConfig.icon), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), more_info_on_tap: entityConfig.more_info_on_tap, content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), latestStateObj: stateObj,  stateObj: this.getHistoryState(stateObj,i), item_type: "entity_history",   };
   			  			  });
   			  	 });
   	this.entityHistory = [].concat.apply([], history);
@@ -384,11 +387,113 @@ class HomeFeedCard extends Polymer.Element {
     });   
   }
   
-  _handleClick(ev, item) {
-  		this.helpers.handleClick(this, this._hass, {"entity":item.entity_id, 
-   			"tap_action":{"action":"more-info"}}, false, false); 
-	}
+  popUp(title, message, large=false) {
+    let popup = document.createElement('div');
+    popup.innerHTML = `
+    <style>
+      app-toolbar {
+        color: var(--more-info-header-color);
+        background-color: var(--more-info-header-background);
+      }
+    </style>
+    <app-toolbar>
+      <paper-icon-button
+        icon="hass:close"
+        dialog-dismiss=""
+      ></paper-icon-button>
+      <div class="main-title" main-title="">
+        ${title}
+      </div>
+    </app-toolbar>
+  `;
+    popup.appendChild(message);
+    this.moreInfo(Object.keys(this._hass.states)[0]);
+    let moreInfo = document.querySelector("home-assistant")._moreInfoEl;
+    moreInfo._page = "none";
+    moreInfo.shadowRoot.appendChild(popup);
+    moreInfo.large = large;
+    //document.querySelector("home-assistant").provideHass(message);
+
+    setTimeout(() => {
+      let interval = setInterval(() => {
+        if (moreInfo.getAttribute('aria-hidden')) {
+          popup.parentNode.removeChild(popup);
+          clearInterval(interval);
+        }
+      }, 100)
+    }, 1000);
+  return moreInfo;
+  }
   
+  closePopUp() {
+    let moreInfo = document.querySelector("home-assistant")._moreInfoEl;
+    if (moreInfo) moreInfo.close()
+  }
+ 
+  fireEvent(ev, detail, entity=null) {
+    ev = new Event(ev, {
+      bubbles: true,
+      cancelable: false,
+      composed: true,
+    });
+    ev.detail = detail || {};
+    if(entity) {
+      entity.dispatchEvent(ev);
+    } else {
+      var root = document.querySelector("home-assistant");
+      root = root && root.shadowRoot;
+      root = root && root.querySelector("home-assistant-main");
+      root = root && root.shadowRoot;
+      root = root && root.querySelector("app-drawer-layout partial-panel-resolver");
+      root = root && root.shadowRoot || root;
+      root = root && root.querySelector("ha-panel-lovelace");
+      root = root && root.shadowRoot;
+      root = root && root.querySelector("hui-root");
+      root = root && root.shadowRoot;
+      root = root && root.querySelector("ha-app-layout #view");
+      root = root && root.firstElementChild;
+      if (root) root.dispatchEvent(ev);
+    }
+  }
+  
+  moreInfo(entity) {
+    this.fireEvent("hass-more-info", {entityId: entity});
+  }
+   
+  _handleClick(ev, item) {
+  		if(item.item_type == "entity_history")
+  		{
+  			let mock_hass = {};
+  			Object.assign(mock_hass, this._hass);
+  			mock_hass.states = [];
+  			mock_hass.states[item.entity_id] = item.stateObj;
+  			
+  			let config = {"type":"custom:hui-entities-card", "entities": [{"entity":item.entity_id,"secondary_info":"last-changed"}, {"type":"custom:hui-history-graph-card","entities":[item.entity_id]}]};
+  			let popup = this.helpers.createThing(config);
+  			
+  			popup.hass = mock_hass;
+   			
+   			
+   			 
+   			setTimeout(()=>{
+   				popup.shadowRoot.querySelector('ha-card #states')
+   				.querySelectorAll("div")[1]
+   				.querySelector("hui-history-graph-card")
+   				.shadowRoot
+   				.querySelector('ha-card')
+   				.style.boxShadow = 'none';
+   			},100);
+   			
+  			
+   			this.popUp(item.display_name, popup);
+  		}
+  		else
+  		{
+  			this.helpers.handleClick(this, this._hass, {"entity":item.entity_id, 
+   				"tap_action":{"action":"more-info"}}, false, false); 
+   		}
+	}
+    
   	_build() {
     	if(!this.$){
     		return;
