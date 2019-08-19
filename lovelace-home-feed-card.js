@@ -240,6 +240,19 @@ class HomeFeedCard extends Polymer.Element {
   	return newStateObj;
   }
   
+  repeatFilter(item, index, arr, remove_repeats, keep_latest){
+  	if(!remove_repeats) return true;
+  	
+  	var repeated = (arr[index-1] && item.state == arr[index-1].state);
+  	if(!repeated || (keep_latest === true && index == arr.length - 1)){
+  		// Not repeated or keep latest option is enabled and this is the latest
+  		return true;
+  	}
+  	else{
+  		return false;
+  	}
+  }
+  
   async refreshEntityHistory() {
   	if(this._config.entities.length == 0) return;
   	
@@ -249,9 +262,8 @@ class HomeFeedCard extends Polymer.Element {
   				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
   				let stateObj = this._hass.states[entityConfig.entity];
   				let remove_repeats = entityConfig.remove_repeats !== false;
-  				return arr.filter(i => i.state != "unknown")
-  			  			  .filter((item,index,arr) => {return !arr[index-1] || item.state != arr[index-1].state || remove_repeats == false })
-  			  			  .filter(i => !entityConfig.exclude_states.includes(i.state))
+  				return arr.filter(i => !entityConfig.exclude_states.includes(i.state))
+  			  			  .filter((item,index,arr) => { return this.repeatFilter(item, index, arr, remove_repeats, entityConfig.keep_latest) })
   			  			  .reverse()
   			  			  .slice(0,entityConfig.max_history ? entityConfig.max_history : 3)
   			  			  .map(i => {
