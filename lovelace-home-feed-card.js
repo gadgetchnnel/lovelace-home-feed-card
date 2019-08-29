@@ -12,15 +12,6 @@ class HomeFeedCard extends LitElement {
 		this.feedContent = null;
 		this.loadModules();
   	}
-	
-	
-	  disconnectedCallback() {
-		this.pageId = null;
-		this._hass = null;
-		this._config = null;
-		this.moment = null;
-		this.helpers = null;
-	  }
 
 	loadModules(){
 		try{
@@ -48,80 +39,6 @@ class HomeFeedCard extends LitElement {
 		}
 		
 	}
-	
-    static get template(){
-    	return html`
-    <style>
-    	ha-card {
-  			padding: 0 16px 16px 16px;
-		}
-		#notifications {
-			margin: -4px 0;
-		}
-		#notifications > * {
-			margin: 8px 0;
-		}
-		#notifications > div > * {
-			overflow: hidden;
-			padding-right: 1em;
-		}
-		
-		.item-container {
-			width: 100%;
-    		height: auto;
-		}
-
-		.item-left, .item-right {
-    		width: 20px;
-    		height: 100%;
-    		float: left;
-		}
-
-		.item-right {
-    		float: right;
-		}
-		
-		.item-right ha-icon {
-			cursor:pointer;
-		}
-		
-		.item-content {
-    		overflow: auto;
-    		height: 100%;
-		}
-		
-		state-badge {
-			margin-top: -10px;
-			margin-left: -10px;
-		}
-		
-		.item-content ha-markdown p {
-			margin-top: 0px;
-		}
-		.header {
-  			font-family: var(--paper-font-headline_-_font-family); -webkit-font-smoothing: var(--paper-font-headline_-_-webkit-font-smoothing); font-size: var(--paper-font-headline_-_font-size); font-weight: var(--paper-font-headline_-_font-weight); letter-spacing: var(--paper-font-headline_-_letter-spacing); line-height: var(--paper-font-headline_-_line-height);
-  			line-height: 30px;
-			color: var(--primary-text-color);
-          	padding: 28px 0 12px;
-          	display: flex;
-          	justify-content: space-between;
-          	top: 0;
-          	z-index: 999;
-          	width: 100%;
-		}
-		.header .name {
-			white-space: var(--paper-font-common-nowrap_-_white-space); overflow: var(--paper-font-common-nowrap_-_overflow); text-overflow: var(--paper-font-common-nowrap_-_text-overflow);
-		}
-		.state-card-dialog {
-			cursor: pointer;
-		}
-	</style>
-    <ha-card id="card">
-        <div id="header" class="header"></div>
-    	<div id="notifications"></div>
-    </ha-card>
-    `;
-    }
 	
 	createRenderRoot() {
 		return this;
@@ -838,7 +755,6 @@ class HomeFeedCard extends LitElement {
       if(this._hass){
         const filtered = Object.keys(this._hass.states).filter(key => key.startsWith("persistent_notification."));
       	let notificationCount = filtered.length;
-      	
       	if(notificationCount != oldNotificationCount || (this.moment && this.moment().diff(notificationsLastUpdate, 'minutes') > 5)){
       		this.notificationCount = notificationCount;
       		this.refreshNotifications().then(() => {});
