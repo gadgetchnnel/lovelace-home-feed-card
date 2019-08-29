@@ -5,7 +5,6 @@ class HomeFeedCard extends LitElement {
     constructor() {
 		super();
 		
-		//this.uniqueId = Math.floor(Math.random() * 20);
 		this.pageId = location.pathname.replace(/\//g,"_");
 		this.configuredScrollbars = false;
 		this.loadedNotifications = false;
@@ -16,7 +15,6 @@ class HomeFeedCard extends LitElement {
 	
 	
 	  disconnectedCallback() {
-		//this.uniqueId = null;
 		this.pageId = null;
 		this._hass = null;
 		this._config = null;
@@ -735,7 +733,7 @@ class HomeFeedCard extends LitElement {
 			else{
 				var timeString = "Today";
 			}
-			timeItem = html`<div style="display:block;; clear:both;">${timeString}</div>`;
+			timeItem = html`<div style="display:block; clear:both;">${timeString}</div>`;
 		}
 		else
 		{
@@ -781,12 +779,12 @@ class HomeFeedCard extends LitElement {
 			<div class="item-left">
 				<state-badge .stateObj='${stateObj}' .overrideIcon='${icon}'/>
 			</div>
+			<div class="item-right">
+				${closeLink}
+			</div>
 			<div class="item-content ${contentClass}" @click=${clickHandler}>
 				<ha-markdown class="markdown-content" style="float:left" .content=${contentText} data-item="${n}"></ha-markdown>
 				${timeItem}
-			</div>
-			<div class="item-right">
-				${closeLink}
 			</div>
 		</div>
 		<hr style="clear:both;"/>
