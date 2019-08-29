@@ -213,11 +213,15 @@ class HomeFeedCard extends LitElement {
 
 	render() {
 		if(!this._hass || !this.moment || !this.helpers){
-			return html`Please wait...`;
+			return html``;
 		} 
 		else{
-			if(this.feedContent){
-				var result= html`
+			if(this.feedContent != null){
+				if(this.feedContent.length === 0 && this._config.show_empty === false){
+					return html``;
+				}
+				else{
+				return html`
 				${HomeFeedCard.stylesheet}
 				<ha-card id="card">
 					${!this._config.title
@@ -230,9 +234,7 @@ class HomeFeedCard extends LitElement {
 					<div id="notifications">${this.feedContent.map((i) => this._renderItem(i))}</div>
 				</ha-card>
 			`;
-			
-			  
-			return result;
+					}
 			}
 			else{
 				return html``;
