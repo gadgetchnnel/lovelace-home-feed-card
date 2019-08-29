@@ -1,13 +1,29 @@
-class HomeFeedCard extends Polymer.Element {
+var LitElement = LitElement || Object.getPrototypeOf(customElements.get("home-assistant-main"));
+var html = LitElement.prototype.html;
+
+class HomeFeedCard extends LitElement {
     constructor() {
-    	super();
+		super();
+		
+		//this.uniqueId = Math.floor(Math.random() * 20);
 		this.pageId = location.pathname.replace(/\//g,"_");
+		this.configuredScrollbars = false;
 		this.loadedNotifications = false;
 		this.refreshingNotifications = false;
+		this.feedContent = null;
 		this.loadModules();
-    	this.loadFromCache();
   	}
-		
+	
+	
+	  disconnectedCallback() {
+		//this.uniqueId = null;
+		this.pageId = null;
+		this._hass = null;
+		this._config = null;
+		this.moment = null;
+		this.helpers = null;
+	  }
+
 	loadModules(){
 		try{
 			import("https://unpkg.com/moment@2.24.0/src/moment.js?module").then((module) => {
@@ -34,9 +50,9 @@ class HomeFeedCard extends Polymer.Element {
 		}
 		
 	}
-
+	
     static get template(){
-    	return Polymer.html`
+    	return html`
     <style>
     	ha-card {
   			padding: 0 16px 16px 16px;
@@ -108,15 +124,124 @@ class HomeFeedCard extends Polymer.Element {
     </ha-card>
     `;
     }
-    
-    loadFromCache() {
-    	this.events = JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId));
-	 	this.lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId));
-	 	this.notifications = JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.pageId));
-	 	this.notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.pageId));
-	 	this.entityHistory = JSON.parse(localStorage.getItem('home-feed-card-history' + this.pageId));
-    }
-    
+	
+	createRenderRoot() {
+		return this;
+	}
+
+	static get stylesheet() {
+		return html`
+			<style>
+				ha-card {
+			  		padding: 0 16px 16px 16px;
+				}
+				#notifications {
+					margin: -4px 0;
+				}
+		
+				#notifications > * {
+					margin: 8px 0;
+				}
+				#notifications > div > * {
+					overflow: hidden;
+					padding-right: 1em;
+				}
+				
+				.item-container {
+					width: 100%;
+					height: auto;
+				}
+
+				.item-left, .item-right {
+					width: 20px;
+					height: 100%;
+					float: left;
+				}
+
+				.item-right {
+					float: right;
+				}
+				
+				.item-right ha-icon {
+					cursor:pointer;
+				}
+				
+				.item-content {
+					overflow: auto;
+					height: 100%;
+				}
+				
+				state-badge {
+					margin-top: -10px;
+					margin-left: -10px;
+				}
+				
+				.item-content ha-markdown p {
+					margin-top: 0px;
+				}
+				.header {
+					font-family: var(--paper-font-headline_-_font-family); -webkit-font-smoothing: var(--paper-font-headline_-_-webkit-font-smoothing); font-size: var(--paper-font-headline_-_font-size); font-weight: var(--paper-font-headline_-_font-weight); letter-spacing: var(--paper-font-headline_-_letter-spacing); line-height: var(--paper-font-headline_-_line-height);
+					line-height: 30px;
+					color: var(--primary-text-color);
+					padding: 28px 0 12px;
+					display: flex;
+					justify-content: space-between;
+					top: 0;
+					z-index: 999;
+					width: 100%;
+				}
+				.header .name {
+					white-space: var(--paper-font-common-nowrap_-_white-space); overflow: var(--paper-font-common-nowrap_-_overflow); text-overflow: var(--paper-font-common-nowrap_-_text-overflow);
+				}
+				.state-card-dialog {
+					cursor: pointer;
+				}
+	</style>
+	`;
+	}
+
+	async updated(changedProperties) {
+		if(!this.configuredScrollbars){
+			var root = this.querySelector("ha-card #notifications");
+			if(root && this._config){	
+	  			if(this._config.scrollbars_enabled !== false || this._config.max_height){
+	  				root.style.maxHeight = this._config.max_height ? this._config.max_height : "28em";
+	  				root.style.overflow = this._config.scrollbars_enabled !== false ? "auto" : "hidden";
+				}
+				this.configuredScrollbars = true;
+			}
+		}
+	}
+
+	render() {
+		if(!this._hass || !this.moment || !this.helpers){
+			return html`Please wait...`;
+		} 
+		else{
+			if(this.feedContent){
+				var result= html`
+				${HomeFeedCard.stylesheet}
+				<ha-card id="card">
+					${!this._config.title
+					? html``
+					: html`
+						  <div id="header" class="header">
+						  <div class="name">${this._config.title}</div>
+						</div>
+					  `}
+					<div id="notifications">${this.feedContent.map((i) => this._renderItem(i))}</div>
+				</ha-card>
+			`;
+			
+			  
+			return result;
+			}
+			else{
+				return html``;
+			}
+		}
+	}
+
     clearCache() {
     	localStorage.removeItem('home-feed-card-events' + this.pageId);
 	 	localStorage.removeItem('home-feed-card-eventsLastUpdate' + this.pageId);
@@ -126,14 +251,14 @@ class HomeFeedCard extends Polymer.Element {
     }
     
     setConfig(config) {
-      if(!config)
+	  if(!config)
       	throw new Error("Invalid configuration");
 	  this._config = config;
       this.entities = this.processConfigEntities(this._config.entities);
       this.calendars = this._config.calendars;
-      setTimeout(() => this.buildIfReady(), 10);
+	  setTimeout(() => this.buildIfReady(), 10);
       this.notificationMonitor();
-    }
+	}
   
   processConfigEntities(entities) {
   		if(!entities) return [];
@@ -253,12 +378,10 @@ class HomeFeedCard extends Polymer.Element {
   	}
   }
   
-  async refreshEntityHistory() {
-  	if(this._config.entities.length == 0) return;
-  	
+  async getLiveEntityHistory() {
   	var entity_ids = this.entities.filter(i => i.include_history == true).map(i => i.entity).join();
-  	let history = (await this._hass.callApi('get', 'history/period?filter_entity_id=' + entity_ids));
-  	history = history.map(arr => {
+  	let history = (await this._hass.callApi('get', 'history/period?filter_entity_id=' + entity_ids))
+  	              .map(arr => {
   				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
   				let stateObj = this._hass.states[entityConfig.entity];
   				let remove_repeats = entityConfig.remove_repeats !== false;
@@ -270,15 +393,21 @@ class HomeFeedCard extends Polymer.Element {
   			  			  	return { ...i, icon: this.getIcon(stateObj, entityConfig.icon), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), more_info_on_tap: entityConfig.more_info_on_tap, content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), latestStateObj: stateObj,  stateObj: this.getHistoryState(stateObj,i), item_type: "entity_history",   };
   			  			  });
   			  	 });
-  	this.entityHistory = [].concat.apply([], history);
-  	localStorage.setItem('home-feed-card-history' + this.pageId,JSON.stringify(this.entityHistory));
+  	return [].concat.apply([], history);
+  }
+  
+  async refreshEntityHistory() {
+  	if(this._config.entities.length == 0) return;
+  	
+  	let entityHistory = await this.getLiveEntityHistory();
+  	localStorage.setItem('home-feed-card-history' + this.pageId, JSON.stringify(entityHistory));
 	this.buildIfReady();
   }
   
   async getEvents() {
 	if(!this.calendars || this.calendars.length == 0) return [];
-	
-	if(!this.lastUpdate || (this.moment && this.moment().diff(this.lastUpdate, 'minutes') > 15)) {
+	let lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId));
+	if(!lastUpdate || (this.moment && this.moment().diff(lastUpdate, 'minutes') > 15)) {
 		const start = this.moment.utc().format("YYYY-MM-DDTHH:mm:ss");
     	const end = this.moment.utc().startOf('day').add(1, 'days').format("YYYY-MM-DDTHH:mm:ss");
 		try{
@@ -299,14 +428,12 @@ class HomeFeedCard extends Polymer.Element {
 	 		return { ...i, format: "relative", item_type: "calendar_event" };
 	 	});
 	 	
-	 	this.events = data;
-	 	this.lastUpdate = this.moment();
-	 	localStorage.setItem('home-feed-card-events' + this.pageId,JSON.stringify(this.events));
-	 	localStorage.setItem('home-feed-card-eventsLastUpdate' + this.pageId,JSON.stringify(this.lastUpdate));
+	 	localStorage.setItem('home-feed-card-events' + this.pageId,JSON.stringify(data));
+	 	localStorage.setItem('home-feed-card-eventsLastUpdate' + this.pageId,JSON.stringify(this.moment()));
 	 	return data;
 	 }
 	 else{
-	 	return this.events;
+	 	return JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId));
 	 }
   }
   
@@ -324,12 +451,10 @@ class HomeFeedCard extends Polymer.Element {
 	 let data = response.map(i => {
 	 	return { ...i, format: "relative", item_type: "notification" };
 	 });
-	 this.notifications = data;
-	 localStorage.setItem('home-feed-card-notifications' + this.pageId,JSON.stringify(this.notifications));
+	 localStorage.setItem('home-feed-card-notifications' + this.pageId,JSON.stringify(data));
 	 
 	 if(this.moment){
-	 	this.notificationsLastUpdate = this.moment();
-	 	localStorage.setItem('home-feed-card-notificationsLastUpdate' + this.pageId,JSON.stringify(this.notificationsLastUpdate));
+	 	localStorage.setItem('home-feed-card-notificationsLastUpdate' + this.pageId,JSON.stringify(this.moment()));
 	 }
 	 
 	 this.refreshingNotifications = false;
@@ -338,15 +463,14 @@ class HomeFeedCard extends Polymer.Element {
    }
    
    getNotifications() {
-   	 if(!this.notifications) return [];
+   	 if(!JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.pageId))) return [];
    	 
-     return this.notifications;
+     return JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.pageId));
    }
    
-   getEntityHistoryItems() {
-   	 if(!this.entityHistory) return [];
-   	 
-     return this.entityHistory;
+   async getEntityHistoryItems() {
+   	if(!JSON.parse(localStorage.getItem('home-feed-card-history' + this.pageId))) return [];
+   	return JSON.parse(localStorage.getItem('home-feed-card-history' + this.pageId));
    }
    
    getItemTimestamp(item)
@@ -374,7 +498,7 @@ class HomeFeedCard extends Polymer.Element {
    
     		
    async getFeedItems(){
-   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities(), this.getEntityHistoryItems()]));
+   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities(), this.getEntityHistoryItems(false)]));
    		var now = new Date();
    		allItems = allItems.map(item => {
    			let timeStamp = this.getItemTimestamp(item);
@@ -393,7 +517,7 @@ class HomeFeedCard extends Polymer.Element {
    }
    
    _handleDismiss(event) {
-   var id = event.target.dataset.notificationId;
+   var id = event.target.dataset.notificationid;
     this._hass.callService("persistent_notification", "dismiss", {
       notification_id: id
     });   
@@ -505,205 +629,169 @@ class HomeFeedCard extends Polymer.Element {
    				"tap_action":{"action":"more-info"}}, false, false); 
    		}
 	}
-    
-  	_build() {
-    	if(!this.$){
-    		return;
-    	}
-    	
-    	const header = this.$.header;
-    	
-    	if(this._config.title) {
-      		if(header.children.length == 0) {
-      			let div = document.createElement("div");
-    			div.classList.add("name");
-    			div.innerText = this._config.title;
-    			header.appendChild(div);
-    		}
-      	}
-      	else {
-      		if(header.parentNode){
-      			header.parentNode.removeChild(header);
-      		}
-      	}
-    	
+	
+	_buildFeed() {
     	if(!this._hass) return;
-    	
-    		this.getFeedItems().then(items =>
+		
+		var feedContent = [];
+		
+    	this.getFeedItems().then(items =>
 	  	{
-	  		if(items.length === 0 && this._config.show_empty === false){
-	  		this.$.card.style.display = "none";
-	  			return;
-	  		}
-	  		
-	  		this.$.card.style.display = "";
-	  		
-	  		const root = this.$.notifications;
-	  		
-	  		if(this._config.scrollbars_enabled !== false || this._config.max_height){
-	  			root.style.maxHeight = this._config.max_height ? this._config.max_height : "28em";
-	  			root.style.overflow = this._config.scrollbars_enabled !== false ? "auto" : "hidden";
-  			}
-  			
-  			if(this._config.max_item_count) items.splice(this._config.max_item_count);
-  			
-    		while(root.lastChild) root.removeChild(root.lastChild);
-    		items.forEach((n) => {
-    		
-    		let itemContainer = document.createElement("div");
-    		itemContainer.classList.add("item-container");
-    		
-    		let itemLeft = document.createElement("div");
-    		itemLeft.classList.add("item-left");
-    		
-    		let itemContent = document.createElement("div");
-    		itemContent.classList.add("item-content");
-    		
-    		let itemRight = document.createElement("div");
-    		itemRight.classList.add("item-right");
-    		
-    		itemContainer.appendChild(itemLeft);
-    		itemContainer.appendChild(itemRight);
-    		itemContainer.appendChild(itemContent);
-    		
-    		switch(n.item_type)
-    		{
-    			case "notification":
-    				var icon = "mdi:bell";
-    				if(this._config.show_notification_title){
-    					var contentText = "<font size='+1em'><b>" + n.title + "</b></font>\n\n" + n.message;
-    				}
-    				else{
-    					var contentText = n.message;
-    				}
-    				
-    				break;
-    			case "calendar_event":
-    				var icon = "mdi:calendar";
-    				var contentText = ((n.summary) ? n.summary : n.title);
-    				break;
-    			case "entity":
-    			case "entity_history":
-    				var icon = n.icon;
-    				
-    				if(n.attributes.device_class === "timestamp"){
-    					var contentText = `${n.display_name}`;
-    					if(!icon) var icon = "mdi:clock-outline";
-    				}
-    				else{
-    					if(n.content_template){
-    						var contentText = this.applyTemplate(n, n.content_template);
-    					}
-    					else{
-    						var contentText = `${n.display_name} @ ${n.state}`;
-    					}
-    				}
-    				break;
-    			case "multi_entity":
-    				var icon = n.icon;
-    				
-    				var contentText = `${n.display_name}`;
-    				
-    				break;
-    			default:
-    				var icon = "mdi:bell";
-    				var contentText = "Unknown Item Type";
-    		}
-    		
-    			
-    		if(!n.stateObj && !icon){ 
-    			icon = "mdi:bell";
-    		}
-    		
-    		let iconElement = document.createElement("state-badge");
-    		iconElement.hass = this._hass;
-    		
-    		iconElement.stateObj = n.stateObj ? n.stateObj : {"entity_id": "", "state": "unknown", "attributes":{}};
-    		iconElement.overrideIcon = icon;
-    		itemLeft.appendChild(iconElement);
-    		
-    		let contentItem = document.createElement("ha-markdown");
-    		contentItem.content = `${contentText}`;
-    		//contentItem.style.cssFloat = "left";
-    		contentItem.classList.add("markdown-content");
-    		itemContent.appendChild(contentItem);
-    		
-    		if(n.item_type == "entity" || n.item_type == "entity_history"){
-    			let more_info_on_tap = (typeof n.more_info_on_tap !== 'undefined') ? n.more_info_on_tap 
-    				: this._config.more_info_on_tap;
-    			
-    			if(more_info_on_tap){
-    				itemContent.classList.add("state-card-dialog");
-      				itemContent.addEventListener("click", (e) => this._handleClick(e, n));
-    			}
-    		}
-    		
-    		var allDay = false;
-    		if(n.item_type == "calendar_event"){
-    			
-    			if(n.start.date){
-    				allDay = true;
-    			}
-    			else if(n.start.dateTime){
-    				allDay = false;	
-    			}
-    			else{
-    				let start = this.moment(n.start);
-    				let end = this.moment(n.end);
-    				let diffInHours = end.diff(start, 'hours');
-    				allDay = (diffInHours >= 24);
-    			}
-    		}
-    		
-    		if(allDay){
-    			let timeItem = document.createElement("div");
-    			timeItem.innerText = "Today";
-    			timeItem.style.display = "block";
-    			itemContent.appendChild(timeItem);
-    		}
-    		else
-    		{
-    			if(n.timeDifference.abs < 60 && n.format == "relative") {
-					// Time difference less than 1 minute, so use a regular div tag with fixed text.
-					// This avoids the time display refreshing too often shortly before or after an item's timestamp
-    				let timeItem = document.createElement("div");
-    				timeItem.innerText = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "Less than 1 minute ago" : "In less than 1 minute";
-    				timeItem.title = new Date(n.timestamp);
-    				timeItem.style.display = "block";
-    				itemContent.appendChild(timeItem);
-    			}
-    			else {
-    				// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
-    				let timeItem = document.createElement("hui-timestamp-display");
-    				timeItem.hass = this._hass;
-    				timeItem.ts = new Date(n.timestamp);
-    				timeItem.format = n.format;
-    				timeItem.title = new Date(n.timestamp);
-    				timeItem.style.display = "block";
-    				itemContent.appendChild(timeItem);
-    			}
-    		}
-    		if(n.item_type == "notification"){
-    			//let closeLink = document.createElement("a");
-    			//closeLink.href = "#";
-    			//closeLink.addEventListener("click", (e) => this._handleDismiss(e));
-    			//closeLink.dataset.notificationId = n.notification_id;
-    			let closeIcon = document.createElement("ha-icon");
-    			closeIcon.addEventListener("click", (e) => this._handleDismiss(e));
-    			closeIcon.icon = "mdi:close";
-    			closeIcon.dataset.notificationId = n.notification_id;
-    			//closeLink.appendChild(closeIcon);
-    			//itemRight.appendChild(closeLink);
-    			itemRight.appendChild(closeIcon);
-    		}
-    		root.appendChild(itemContainer);
-    		let hr = document.createElement("hr");
-    		hr.style.clear = "both";
-    		root.appendChild(hr);
-    	});
+	  		this.feedContent = items;
+			this.requestUpdate();
   		}
-  	  );
-  	}
+		);
+	}
+	
+	_renderItem(n) {
+		switch(n.item_type)
+		{
+			case "notification":
+				var icon = "mdi:bell";
+				if(this._config.show_notification_title){
+					var contentText = "<font size='+1em'><b>" + n.title + "</b></font>\n\n" + n.message;
+				}
+				else{
+					var contentText = n.message;
+				}
+				
+				break;
+			case "calendar_event":
+				var icon = "mdi:calendar";
+				var contentText = ((n.summary) ? n.summary : n.title);
+				break;
+			case "entity":
+			case "entity_history":
+				var icon = n.icon;
+				
+				if(n.attributes.device_class === "timestamp"){
+					var contentText = `${n.display_name}`;
+					if(!icon) var icon = "mdi:clock-outline";
+				}
+				else{
+					if(n.content_template){
+						var contentText = this.applyTemplate(n, n.content_template);
+					}
+					else{
+						var contentText = `${n.display_name} @ ${n.state}`;
+					}
+				}
+				break;
+			case "multi_entity":
+				var icon = n.icon;
+				
+				var contentText = `${n.display_name}`;
+				
+				break;
+			default:
+				var icon = "mdi:bell";
+				var contentText = "Unknown Item Type";
+		}
+		
+			
+		if(!n.stateObj && !icon){ 
+			icon = "mdi:bell";
+		}
+		
+		var clickable = false;
+		var contentClass = '';
+
+		if(n.item_type == "entity" || n.item_type == "entity_history"){
+			let more_info_on_tap = (typeof n.more_info_on_tap !== 'undefined') ? n.more_info_on_tap 
+				: this._config.more_info_on_tap;
+			
+			if(more_info_on_tap){
+				
+				contentClass = "state-card-dialog";
+				clickable = true;
+			}
+		}
+		
+		
+		
+		var allDay = false;
+		if(n.item_type == "calendar_event"){
+			
+			if(n.start.date){
+				allDay = true;
+			}
+			else if(n.start.dateTime){
+				allDay = false;	
+			}
+			else{
+				let start = this.moment(n.start);
+				let end = this.moment(n.end);
+				let diffInHours = end.diff(start, 'hours');
+				allDay = (diffInHours >= 24);
+			}
+		}
+		var timeItem;
+
+		if(allDay){
+			
+			if(n.start.date && this.moment(n.start.date) > this.moment().startOf('day')){
+				var timeString = "Tomorrow";
+			}
+			else{
+				var timeString = "Today";
+			}
+			timeItem = html`<div style="display:block;; clear:both;">${timeString}</div>`;
+		}
+		else
+		{
+			if(n.timeDifference.abs < 60 && n.format == "relative") {
+				// Time difference less than 1 minute, so use a regular div tag with fixed text.
+				// This avoids the time display refreshing too often shortly before or after an item's timestamp
+				let timeString = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "Less than 1 minute ago" : "In less than 1 minute";
+				timeItem = html`<div style="display:block; clear:both;" title="${new Date(n.timestamp)}">${timeString}</div>`;
+			}
+			else {
+				// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
+				timeItem = html`<hui-timestamp-display
+									style="display:block; clear:both;"
+									.hass="${this._hass}"
+									.ts="${new Date(n.timestamp)}"
+									.format="${n.format}"
+									title="${new Date(n.timestamp)}"
+								></hui-timestamp-display>
+              				`;
+			}
+		}
+		
+		
+
+		if(n.item_type == "notification"){
+			var closeLink = html`<ha-icon icon='mdi:close' data-notificationid='${n.notification_id}' @click=${this._handleDismiss}</ha-icon>`;
+		}
+		else{
+			var closeLink = html``;
+		}
+		
+		let stateObj = n.stateObj ? n.stateObj : {"entity_id": "", "state": "unknown", "attributes":{}};
+		
+		if(clickable){
+			var clickHandler= (e) => this._handleClick(e, n);
+		}
+		else{
+			var clickHandler = null;
+		}
+
+		return html`
+		<div class="item-container">
+			<div class="item-left">
+				<state-badge .stateObj='${stateObj}' .overrideIcon='${icon}'/>
+			</div>
+			<div class="item-content ${contentClass}" @click=${clickHandler}>
+				<ha-markdown class="markdown-content" style="float:left" .content=${contentText} data-item="${n}"></ha-markdown>
+				${timeItem}
+			</div>
+			<div class="item-right">
+				${closeLink}
+			</div>
+		</div>
+		<hr style="clear:both;"/>
+		`;
+	}
   	
   	get notificationButton() {
       if(!this._notificationButton){
@@ -745,12 +833,13 @@ class HomeFeedCard extends Polymer.Element {
     }
     
     notificationMonitor() {
-      let oldNotificationCount = this.notificationCount ? this.notificationCount : "0";
+	  let oldNotificationCount = this.notificationCount ? this.notificationCount : "0";
+	  let notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.pageId));
       if(this._hass){
         const filtered = Object.keys(this._hass.states).filter(key => key.startsWith("persistent_notification."));
       	let notificationCount = filtered.length;
       	
-      	if(notificationCount != oldNotificationCount || (this.moment && this.moment().diff(this.notificationsLastUpdate, 'minutes') > 5)){
+      	if(notificationCount != oldNotificationCount || (this.moment && this.moment().diff(notificationsLastUpdate, 'minutes') > 5)){
       		this.notificationCount = notificationCount;
       		this.refreshNotifications().then(() => {});
       	}
@@ -764,19 +853,20 @@ class HomeFeedCard extends Polymer.Element {
     
     buildIfReady(){
     	if(!this._hass || !this.moment || !this.helpers) return;
-    	
-    	if((!this.loadedNotifications || !this.notificationsLastUpdate) && this.moment){
+		let notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId));
+		
+    	if((!this.loadedNotifications || !notificationsLastUpdate) && this.moment){
     		this.refreshNotifications().then(() => {});
     	}
-        this._build();
+        this._buildFeed();
     }
     
   	set hass(hass) {
-    	this._hass = hass;
+		this._hass = hass;
     	if(this.moment && this.helpers){
     		this.refreshEntityHistory().then(() => {});
     	}
-    	this.buildIfReady();
+		this.buildIfReady();
   	}
   	
   	getCardSize() {
