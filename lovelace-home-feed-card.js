@@ -434,7 +434,7 @@ class HomeFeedCard extends LitElement {
    }
    
    _handleDismiss(event) {
-   var id = event.target.dataset.notificationid;
+   var id = event.target.notificationId;
     this._hass.callService("persistent_notification", "dismiss", {
       notification_id: id
     });   
@@ -513,7 +513,9 @@ class HomeFeedCard extends LitElement {
     this.fireEvent("hass-more-info", {entityId: entity});
   }
    
-  _handleClick(ev, item) {
+  _handleClick(ev) {
+  		let item = ev.currentTarget.item;
+  		
   		if(item.item_type == "entity_history")
   		{
   			let mock_hass = {};
@@ -678,20 +680,13 @@ class HomeFeedCard extends LitElement {
 		
 
 		if(n.item_type == "notification"){
-			var closeLink = html`<ha-icon icon='mdi:close' data-notificationid='${n.notification_id}' @click=${this._handleDismiss}</ha-icon>`;
+			var closeLink = html`<ha-icon icon='mdi:close' .notificationId='${n.notification_id}' @click=${this._handleDismiss}</ha-icon>`;
 		}
 		else{
 			var closeLink = html``;
 		}
 		
 		let stateObj = n.stateObj ? n.stateObj : {"entity_id": "", "state": "unknown", "attributes":{}};
-		
-		if(clickable){
-			var clickHandler= (e) => this._handleClick(e, n);
-		}
-		else{
-			var clickHandler = null;
-		}
 
 		return html`
 		<div class="item-container">
@@ -701,8 +696,8 @@ class HomeFeedCard extends LitElement {
 			<div class="item-right">
 				${closeLink}
 			</div>
-			<div class="item-content ${contentClass}" @click=${clickHandler}>
-				<ha-markdown class="markdown-content" style="float:left" .content=${contentText} data-item="${n}"></ha-markdown>
+			<div class="item-content ${contentClass}" .item=${n} @click=${clickable ? this._handleClick : null}>
+				<ha-markdown class="markdown-content" style="float:left" .content=${contentText}></ha-markdown>
 				${timeItem}
 			</div>
 		</div>
