@@ -294,9 +294,12 @@ class HomeFeedCard extends LitElement {
   		return false;
   	}
   }
-  
+
   async getLiveEntityHistory() {
   	var entity_ids = this.entities.filter(i => i.include_history == true).map(i => i.entity).join();
+  	
+  	if(!entity_ids || entity_ids.length == 0) return []; // Don't need to call history API if there are no items requiring history
+  	
   	let history = (await this._hass.callApi('get', 'history/period?filter_entity_id=' + entity_ids))
   	              .map(arr => {
   				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
@@ -415,7 +418,7 @@ class HomeFeedCard extends LitElement {
    
     		
    async getFeedItems(){
-   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities(), this.getEntityHistoryItems(false)]));
+   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities(), this.getEntityHistoryItems()]));
    		var now = new Date();
    		allItems = allItems.map(item => {
    			let timeStamp = this.getItemTimestamp(item);
