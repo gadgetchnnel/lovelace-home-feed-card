@@ -780,7 +780,7 @@ class HomeFeedCard extends LitElement {
     
   	set hass(hass) {
 		this._hass = hass;
-    	if(this.moment && this.helpers){
+    	if(this.moment && this.helpers && this._config.entities){
     		this.refreshEntityHistory().then(() => {});
     	}
 		this.buildIfReady();
