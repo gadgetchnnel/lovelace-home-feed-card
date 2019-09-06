@@ -767,7 +767,7 @@ class HomeFeedCard extends LitElement {
     
     buildIfReady(){
     	if(!this._hass || !this.moment || !this.helpers) return;
-		let notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId));
+		let notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.pageId));
 		
     	if((!this.loadedNotifications || !notificationsLastUpdate) && this.moment){
     		this.refreshNotifications().then(() => {});
