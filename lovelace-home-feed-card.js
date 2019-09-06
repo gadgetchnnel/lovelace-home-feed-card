@@ -111,6 +111,9 @@ class HomeFeedCard extends LitElement {
 				.state-card-dialog {
 					cursor: pointer;
 				}
+				#notifications hr:last-child {
+					display: none;
+				}
 	</style>
 	`;
 	}
