@@ -1,7 +1,14 @@
-var LitElement = LitElement || Object.getPrototypeOf(customElements.get("home-assistant-main"));
-var html = LitElement.prototype.html;
+class HomeFeedCardHelpers{
+	
+	static get LitElement(){
+		return Object.getPrototypeOf(customElements.get("home-assistant-main"));
+	}
+	static get html(){
+		return HomeFeedCardHelpers.LitElement.prototype.html;
+	}
+}
 
-class HomeFeedCard extends LitElement {
+class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     constructor() {
 		super();
 		
@@ -45,7 +52,7 @@ class HomeFeedCard extends LitElement {
 	}
 
 	static get stylesheet() {
-		return html`
+		return HomeFeedCardHelpers.html`
 			<style>
 				ha-card {
 			  		padding: 0 16px 16px 16px;
@@ -133,20 +140,20 @@ class HomeFeedCard extends LitElement {
 
 	render() {
 		if(!this._hass || !this.moment || !this.helpers){
-			return html``;
+			return HomeFeedCardHelpers.html``;
 		} 
 		else{
 			if(this.feedContent != null){
 				if(this.feedContent.length === 0 && this._config.show_empty === false){
-					return html``;
+					return HomeFeedCardHelpers.html``;
 				}
 				else{
-				return html`
+				return HomeFeedCardHelpers.html`
 				${HomeFeedCard.stylesheet}
 				<ha-card id="card">
 					${!this._config.title
-					? html``
-					: html`
+					? HomeFeedCardHelpers.html``
+					: HomeFeedCardHelpers.html`
 						  <div id="header" class="header">
 						  <div class="name">${this._config.title}</div>
 						</div>
@@ -157,7 +164,7 @@ class HomeFeedCard extends LitElement {
 					}
 			}
 			else{
-				return html``;
+				return HomeFeedCardHelpers.html``;
 			}
 		}
 	}
@@ -564,6 +571,7 @@ class HomeFeedCard extends LitElement {
 		
     	this.getFeedItems().then(items =>
 	  	{
+	  		if(this._config.max_item_count) items.splice(this._config.max_item_count);
 	  		this.feedContent = items;
 			this.requestUpdate();
   		}
@@ -662,7 +670,7 @@ class HomeFeedCard extends LitElement {
 			else{
 				var timeString = "Today";
 			}
-			timeItem = html`<div style="display:block; clear:both;">${timeString}</div>`;
+			timeItem = HomeFeedCardHelpers.html`<div style="display:block; clear:both;">${timeString}</div>`;
 		}
 		else
 		{
@@ -670,11 +678,11 @@ class HomeFeedCard extends LitElement {
 				// Time difference less than 1 minute, so use a regular div tag with fixed text.
 				// This avoids the time display refreshing too often shortly before or after an item's timestamp
 				let timeString = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "Less than 1 minute ago" : "In less than 1 minute";
-				timeItem = html`<div style="display:block; clear:both;" title="${new Date(n.timestamp)}">${timeString}</div>`;
+				timeItem = HomeFeedCardHelpers.html`<div style="display:block; clear:both;" title="${new Date(n.timestamp)}">${timeString}</div>`;
 			}
 			else {
 				// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
-				timeItem = html`<hui-timestamp-display
+				timeItem = HomeFeedCardHelpers.html`<hui-timestamp-display
 									style="display:block; clear:both;"
 									.hass="${this._hass}"
 									.ts="${new Date(n.timestamp)}"
@@ -688,15 +696,15 @@ class HomeFeedCard extends LitElement {
 		
 
 		if(n.item_type == "notification"){
-			var closeLink = html`<ha-icon icon='mdi:close' .notificationId='${n.notification_id}' @click=${this._handleDismiss}</ha-icon>`;
+			var closeLink = HomeFeedCardHelpers.html`<ha-icon icon='mdi:close' .notificationId='${n.notification_id}' @click=${this._handleDismiss}</ha-icon>`;
 		}
 		else{
-			var closeLink = html``;
+			var closeLink = HomeFeedCardHelpers.html``;
 		}
 		
 		let stateObj = n.stateObj ? n.stateObj : {"entity_id": "", "state": "unknown", "attributes":{}};
 
-		return html`
+		return HomeFeedCardHelpers.html`
 		<div class="item-container">
 			<div class="item-left">
 				<state-badge .stateObj='${stateObj}' .overrideIcon='${icon}'/>
