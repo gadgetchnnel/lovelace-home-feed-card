@@ -161,6 +161,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 					<div id="notifications">${this.feedContent.map((i) => this._renderItem(i))}</div>
 				</ha-card>
 			`;
+			
 					}
 			}
 			else{
@@ -254,10 +255,11 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	 	return data.filter(entity => entity != null);
 	}
   
-  applyTemplate(item, template){
+  applyTemplate(item, template, translateToJinja = false){
   	var result = template;
+  	
   	Object.keys(item).forEach(p => {
-  		result = result.replace("{{" + p + "}}", item[p]);
+  		result = result.replace("{{" + p + "}}", translateToJinja ? "{{ config.item." + p + " }}" : item[p]);
   	});
   	
   	if(item.attributes)
@@ -277,7 +279,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   			return stateObj.attributes[i.list_attribute].map(p => {
   				let created = (i.timestamp_property && p[i.timestamp_property]) ? p[i.timestamp_property] : stateObj.last_changed;
   				let timeStamp = isNaN(created) ? created : new Date(created * 1000);
-  				return { ...stateObj, icon: icon, format: (i.format != null ? i.format : "relative"), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, stateObj: stateObj, item_type: "multi_entity",   };
+  				return { ...stateObj, icon: icon, format: (i.format != null ? i.format : "relative"), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, stateObj: stateObj, item_data: p, detail: i.detail_template ? this.applyTemplate(p, i.detail_template, false) : null,  item_type: "multi_entity",   };
   			}).slice(0, (i.max_items) ? i.max_items : 5);
   		});
 	 	
@@ -336,12 +338,35 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	this.buildIfReady();
   }
   
+  eventTime(eventTime)
+   {
+		return ((eventTime.date) ? eventTime.date : (eventTime.dateTime) ? eventTime.dateTime : eventTime);   	
+   }
+   
+   eventAllDay(event){
+   		var allDay = false;
+   		if(event.start.date){
+				allDay = true;
+		}
+		else if(event.start.dateTime){
+			allDay = false;	
+		}
+		else{
+			let start = this.moment(event.start);
+			let end = this.moment(event.end);
+			let diffInHours = end.diff(start, 'hours');
+			allDay = (diffInHours >= 24);
+		}
+		
+		return allDay;
+   }
+   
   async getEvents() {
 	if(!this.calendars || this.calendars.length == 0) return [];
 	let lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId + this._config.title));
 	if(!lastUpdate || (this.moment && this.moment().diff(lastUpdate, 'minutes') > 15)) {
 		const start = this.moment.utc().format("YYYY-MM-DDTHH:mm:ss");
-    	const end = this.moment.utc().startOf('day').add(1, 'days').format("YYYY-MM-DDTHH:mm:ss");
+    	const end = this.moment.utc().startOf('day').add(7, 'days').format("YYYY-MM-DDTHH:mm:ss");
 		try{
 			var calendars = await Promise.all(
         	this.calendars.map(
@@ -355,9 +380,12 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
         	var calendars = [];
         }
     	var events = [].concat.apply([], calendars);
+        let calendar_template = "### {{display_name}}\n\nStart Time {{start_time}}\nEnd Time {{end_time}}\nAll Day {{all_day}}";
         
     	var data = events.map(i => {
-	 		return { ...i, format: "relative", item_type: "calendar_event" };
+	 		let event = { ...i, display_name: i.summary ? i.summary : i.title, start_time: this.eventTime(i.start), end_time: this.eventTime(i.end), all_day: this.eventAllDay(i), format: "relative", item_type: "calendar_event" };
+	 		event.detail = this.applyTemplate(event, calendar_template, false);
+	 		return event;
 	 	});
 	 	
 	 	localStorage.setItem('home-feed-card-events' + this.pageId + this._config.title,JSON.stringify(data));
@@ -412,7 +440,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     			case "notification":
     				return item.created_at;
     			case "calendar_event":
-    				return ((item.start.date) ? item.start.date : (item.start.dateTime) ? item.start.dateTime : item.start);
+    				return item.start_time;
     			case "entity":
     			case "entity_history":
     			case "multi_entity":
@@ -427,8 +455,6 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     		}
    }
    
-   
-    		
    async getFeedItems(){
    		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities(), this.getEntityHistoryItems()]));
    		var now = new Date();
@@ -455,14 +481,31 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     });   
   }
   
+  _moreInfoHeaderClick(event) {
+   let moreInfo = document.querySelector("home-assistant")._moreInfoEl;
+   moreInfo.large = !moreInfo.large;
+  }
+  
   popUp(title, message, large=false) {
     let popup = document.createElement('div');
     popup.innerHTML = `
     <style>
-      app-toolbar {
-        color: var(--more-info-header-color);
-        background-color: var(--more-info-header-background);
+      .main-title {
+      	pointer-events: auto;
       }
+      app-toolbar {
+        color: var(--primary-text-color);
+        background-color: var(--secondary-background-color);
+      }
+      
+        /* background for small screens */
+        @media all and (max-width: 450px), all and (max-height: 500px) {
+          app-toolbar {
+            color: var(--text-primary-color);
+            background-color: var(--primary-color);
+            
+          }
+        }
     </style>
     <app-toolbar>
       <paper-icon-button
@@ -474,6 +517,8 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
       </div>
     </app-toolbar>
   `;
+  
+    popup.querySelector("app-toolbar").addEventListener('click', this._moreInfoHeaderClick, false);
     popup.appendChild(message);
     this.moreInfo(Object.keys(this._hass.states)[0]);
     let moreInfo = document.querySelector("home-assistant")._moreInfoEl;
@@ -557,6 +602,26 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   			
    			this.popUp(item.display_name, popup);
   		}
+  		else if(item.item_type == "multi_entity" || item.item_type == "calendar_event"){
+  			let mock_hass = {};
+  			Object.assign(mock_hass, this._hass);
+  			
+  			let config = {"type":"custom:hui-markdown-card", "content": item.detail, "item": item.item_data};
+  			let popup = this.helpers.createThing(config);
+  			console.log("Detail", item.detail);
+  			popup.hass = this._hass;
+  			
+  			setTimeout(()=>{
+  				let card = popup.shadowRoot.querySelector('ha-card');
+  				card.style.maxHeight = "300px";
+  				card.style.overflow = "auto";
+  			},100);
+  			
+  			let maxTitleLength = 80;
+  			let title = item.display_name;
+  			if(title.length > maxTitleLength) title = title.substring(0,maxTitleLength - 3) + "...";
+   			this.popUp(title, popup, false);
+  		}
   		else
   		{
   			this.helpers.handleClick(this, this._hass, {"entity":item.entity_id, 
@@ -574,8 +639,31 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	  		if(this._config.max_item_count) items.splice(this._config.max_item_count);
 	  		this.feedContent = items;
 			this.requestUpdate();
-  		}
-		);
+			
+			// this.querySelectorAll("hui-markdown-card")
+// 			.forEach(m => {
+// 				
+// 				if(m.content) {
+// 					m.setConfig({"content": m.content, "item": m.item});
+// 					m.hass = this._hass;
+// 				}
+// 				
+// 			});
+// 			
+// 			setTimeout(() => {
+// 				this.querySelectorAll("hui-markdown-card")
+// 				.forEach(m => {
+// 					if(m.content) {
+// 						m.shadowRoot.querySelectorAll("ha-card,ha-card ha-markdown")
+// 						.forEach(e => {
+// 							e.style.backgroundColor = "rgba(0,0,0,0)";
+// 							e.style.padding = "0px 0px 5px 0px";
+// 							e.style.boxShadow = "none";
+// 						});	
+// 					}
+// 				});
+// 			});
+  		});
 	}
 	
 	_renderItem(n) {
@@ -593,7 +681,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				break;
 			case "calendar_event":
 				var icon = "mdi:calendar";
-				var contentText = ((n.summary) ? n.summary : n.title);
+				var contentText = n.display_name;
 				break;
 			case "entity":
 			case "entity_history":
@@ -616,7 +704,6 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				var icon = n.icon;
 				
 				var contentText = `${n.display_name}`;
-				
 				break;
 			default:
 				var icon = "mdi:bell";
@@ -642,24 +729,16 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 			}
 		}
 		
-		
-		
-		var allDay = false;
-		if(n.item_type == "calendar_event"){
-			
-			if(n.start.date){
-				allDay = true;
-			}
-			else if(n.start.dateTime){
-				allDay = false;	
-			}
-			else{
-				let start = this.moment(n.start);
-				let end = this.moment(n.end);
-				let diffInHours = end.diff(start, 'hours');
-				allDay = (diffInHours >= 24);
+		if(n.item_type == "multi_entity" || n.item_type == "calendar_event"){
+			if(n.detail){
+				contentClass = "state-card-dialog";
+				clickable = true;
 			}
 		}
+		
+		
+		var allDay = (n.item_type == "calendar_event" && n.all_day);
+		
 		var timeItem;
 
 		if(allDay){
@@ -703,7 +782,8 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		}
 		
 		let stateObj = n.stateObj ? n.stateObj : {"entity_id": "", "state": "unknown", "attributes":{}};
-
+		//let contentItem = n.item_type == "multi_entity" ? n.item_data : n.stateObj; 
+		
 		return HomeFeedCardHelpers.html`
 		<div class="item-container">
 			<div class="item-left">
