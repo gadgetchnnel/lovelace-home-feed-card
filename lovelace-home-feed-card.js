@@ -1,13 +1,127 @@
 class HomeFeedCardHelpers{
 	
 	static get LitElement(){
-		return Object.getPrototypeOf(customElements.get("home-assistant-main"));
+		//return Object.getPrototypeOf(customElements.get("home-assistant-main"));
+		return Object.getPrototypeOf(customElements.get("hui-view"));
 	}
 	static get html(){
 		return HomeFeedCardHelpers.LitElement.prototype.html;
 	}
 }
 
+class HomeFeedNotificationPopup extends HomeFeedCardHelpers.LitElement {
+	constructor() {
+		super();
+		this.pushStateInterceptor()
+  	}
+  	
+  	createRenderRoot() {
+		return this;
+	}
+	
+	set notification(notification) {
+		this._notification = notification;
+	}
+	
+	pushStateInterceptor()
+	{
+		(function(history){
+    		var pushState = history.pushState;
+   		 	history.pushState = function(state) {
+        		if (typeof history.onpushstate == "function") {
+            		history.onpushstate({state: state});
+        		}
+        		return pushState.apply(history, arguments);
+    		};
+		})(window.history);
+	}
+	
+	render() {
+		return HomeFeedCardHelpers.html`
+			<style type="text/css">
+				.contents {
+        			padding: 16px;
+        			-ms-user-select: text;
+        			-webkit-user-select: text;
+        			-moz-user-select: text;
+        			user-select: text;
+      			}
+      			
+      			ha-markdown {
+        			overflow-wrap: break-word;
+      			}
+      			
+      			a {
+        			color: var(--primary-color);
+      			}
+      
+	 			.time {
+        			display: flex;
+        			justify-content: flex-end;
+        			margin-top: 6px;
+      			}
+      			
+      			ha-relative-time {
+        			color: var(--secondary-text-color);
+      			}
+      			
+      			.actions {
+        			border-top: 1px solid #e8e8e8;
+        			padding: 5px 16px;
+      			}
+			</style>
+			<ha-card>
+				<div class="contents">
+					<ha-markdown .hass="${this._hass}" .content="${this._notification.message}"></ha-markdown>
+					<div class="time">
+          				<span>
+            				<ha-relative-time .hass="${this._hass}" .datetime="${this._notification.created_at}"></ha-relative-time>
+          				</span>
+        			</div>
+        			<div class="actions">
+        				<mwc-button .notificationId='${this._notification.notification_id}' @click=${this._handleDismiss}>Dismiss</mwc-button>
+        			</div>
+				</div>
+			</ha-card>
+		`;
+	}
+	closePopUp() {
+    let moreInfo = document.querySelector("home-assistant")._moreInfoEl;
+    if (moreInfo && moreInfo.style.display != "none") {
+    	moreInfo.close();
+    	history.onpushstate = null;
+    }
+   }
+   
+	_handleDismiss(event) {
+  		var id = event.target.notificationId;
+    	this._hass.callService("persistent_notification", "dismiss", {
+      		notification_id: id
+    	});  
+    	this.closePopUp(); 
+   }
+   
+	_computeTooltip(hass, notification) {
+    	if (!hass || !notification) {
+      		return undefined;
+    	}
+	
+    	const d = new Date(notification.created_at);
+    	return d.toLocaleDateString(hass.language, {
+      		year: "numeric",
+      		month: "short",
+      		day: "numeric",
+      		minute: "numeric",
+      		hour: "numeric",
+    	});
+  	}
+	
+	set hass(hass) {
+		this._hass = hass;
+	}
+	
+	
+}
 class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     constructor() {
 		super();
@@ -24,7 +138,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		try{
 			import("https://unpkg.com/moment@2.24.0/src/moment.js?module").then((module) => {
 			this.moment = module.default;
-			console.log("Loaded Moment module.");
+			//console.log("Loaded Moment module.");
 			this.buildIfReady();
 				});
 			}
@@ -36,7 +150,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		try{
 			import("https://unpkg.com/custom-card-helpers@1.2.2/dist/index.m.js?module").then((module) => {
 			this.helpers = module;
-			console.log("Loaded custom-card-helpers module.");
+			//console.log("Loaded custom-card-helpers module.");
 			this.buildIfReady();
 				});
 			}
@@ -45,12 +159,38 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				throw new Error("Error Loading custom-card-helpers module" + e.message);
 		}
 		
+		// try{
+// 			import("https://unpkg.com/lit-html@1.1.2/lit-html.js?module").then((module) => {
+// 			this.lithtml = module;
+// 			//console.log("Loaded lit-html module.");
+// 			this.buildIfReady();
+// 				});
+// 			}
+// 			catch(e){
+// 				console.log("Error Loading lit-html module", e.message);
+// 				throw new Error("Error Loading lit-html module" + e.message);
+// 		}
+		
 	}
 	
 	createRenderRoot() {
 		return this;
 	}
-
+	
+	get pageRoot() {
+		let root = document.querySelector("home-assistant");
+		root = root && root.shadowRoot;
+    	root = root && root.querySelector('home-assistant-main');
+    	root = root && root.shadowRoot;
+    	root = root && root.querySelector('app-drawer-layout partial-panel-resolver');
+    	root = root && root.shadowRoot || root;
+    	root = root && root.querySelector('ha-panel-lovelace');
+    	root = root && root.shadowRoot;
+    	root = root && root.querySelector('hui-root');
+    	
+    	return root;
+	}
+	
 	static get stylesheet() {
 		return HomeFeedCardHelpers.html`
 			<style>
@@ -120,6 +260,21 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				}
 				#notifications hr:last-child {
 					display: none;
+				}
+				
+				ha-markdown a {
+        			color: var(--primary-color);
+  				}
+  				
+				ha-markdown.compact {
+					max-width: 65%;
+				}
+				
+				ha-markdown.compact p {
+					max-width: 100%;
+    				white-space: nowrap;
+    				overflow: hidden;
+    				text-overflow: ellipsis;
 				}
 	</style>
 	`;
@@ -370,21 +525,63 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		try{
 			var calendars = await Promise.all(
         	this.calendars.map(
-          		calendar => {
+          		async calendar => {
           			let url = `calendars/${calendar}?start=${start}Z&end=${end}Z`;
-          			return this._hass.callApi('get', url);
+          			let result = await this._hass.callApi('get', url);
+          			return result.map(x => { return {...x, calendar: calendar} });
           		  }));
         }
         catch(e){
         	console.error("Error getting calendar events");
         	var calendars = [];
         }
-    	var events = [].concat.apply([], calendars);
-        let calendar_template = "### {{display_name}}\n\nStart Time {{start_time}}\nEnd Time {{end_time}}\nAll Day {{all_day}}";
         
+    	var events = [].concat.apply([], calendars);
     	var data = events.map(i => {
 	 		let event = { ...i, display_name: i.summary ? i.summary : i.title, start_time: this.eventTime(i.start), end_time: this.eventTime(i.end), all_day: this.eventAllDay(i), format: "relative", item_type: "calendar_event" };
-	 		event.detail = this.applyTemplate(event, calendar_template, false);
+	 		let startDateTime = this.moment(new Date(event.start_time));
+	 		let endDateTime = this.moment(new Date(event.end_time));
+	 		let eventTime = "";
+	 		if(event.all_day){
+	 			//console.log(i.calendar, i.summary, endDateTime);
+	 			endDateTime = endDateTime.startOf('day').add(-1, 'hours');
+	 			//console.log(i.calendar, i.summary, endDateTime);
+	 			if(startDateTime.clone().startOf('day').isSame(endDateTime.clone().startOf('day'))) // One day event
+	 			{
+	 				eventTime = `${startDateTime.format("dddd, D MMMM")}`;
+	 			}
+	 			else if(startDateTime.month() == endDateTime.month()){
+	 				eventTime = `${startDateTime.format("D")} - ${endDateTime.format("D MMMM YYYY")}`;
+	 			}
+	 			else if(startDateTime.year() == endDateTime.year())
+	 			{
+	 				eventTime = `${startDateTime.format("D MMMM")} - ${endDateTime.format("D MMMM YYYY")}`;
+	 			}
+	 			else {
+	 				eventTime = `${startDateTime.format("D MMMM YYYY")} - ${endDateTime.format("D MMMM YYYY")}`;
+	 			}
+	 		}
+	 		else
+	 		{
+	 			if(startDateTime.clone().startOf('day').isSame(endDateTime.clone().startOf('day'))) // Start and end same day
+	 			{
+	 				if(startDateTime.format("a") == endDateTime.format("a"))
+	 				{
+	 					eventTime = `${startDateTime.format("dddd, D MMMM")}  ⋅ ${startDateTime.format("h:mm")} - ${endDateTime.format("h:mm a")}`;
+	 				}
+	 				else{
+	 					eventTime = `${startDateTime.format("dddd, D MMMM")}  ⋅ ${startDateTime.format("h:mm a")} - ${endDateTime.format("h:mm a")}`;
+	 				}		
+	 			}
+	 			else
+	 			{
+	 				eventTime = `${startDateTime.format("D MMMM YYYY, h:mm a")} - ${endDateTime.format("D MMMM YYYY, h:mm a")}`;
+	 			}
+	 		}
+	 		event.detail = `<ha-icon icon="mdi:clock"></ha-icon> ${eventTime}
+	 		
+ <ha-icon icon="mdi:calendar"></ha-icon> ${this._hass.states[i.calendar].attributes["friendly_name"]}
+	 		`;
 	 		return event;
 	 	});
 	 	
@@ -409,7 +606,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		response = response.filter(n => n.notification_id.match(this._config.id_filter));
 	 }
 	 let data = response.map(i => {
-	 	return { ...i, format: "relative", item_type: "notification" };
+	 	return { ...i, format: "relative", item_type: "notification", original_notification: i };
 	 });
 	 localStorage.setItem('home-feed-card-notifications' + this.pageId + this._config.title,JSON.stringify(data));
 	 
@@ -535,12 +732,16 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
         }
       }, 100)
     }, 1000);
+  history.onpushstate = this.closePopUp;
   return moreInfo;
   }
   
   closePopUp() {
     let moreInfo = document.querySelector("home-assistant")._moreInfoEl;
-    if (moreInfo) moreInfo.close()
+    if (moreInfo && moreInfo.style.display != "none") {
+    	moreInfo.close();
+    	history.onpushstate = null;
+    }
   }
  
   fireEvent(ev, detail, entity=null) {
@@ -572,7 +773,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   moreInfo(entity) {
     this.fireEvent("hass-more-info", {entityId: entity});
   }
-   
+  
   _handleClick(ev) {
   		let item = ev.currentTarget.item;
   		
@@ -608,7 +809,6 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   			
   			let config = {"type":"custom:hui-markdown-card", "content": item.detail, "item": item.item_data};
   			let popup = this.helpers.createThing(config);
-  			console.log("Detail", item.detail);
   			popup.hass = this._hass;
   			
   			setTimeout(()=>{
@@ -622,6 +822,16 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   			if(title.length > maxTitleLength) title = title.substring(0,maxTitleLength - 3) + "...";
    			this.popUp(title, popup, false);
   		}
+  		else if(item.item_type == "notification")
+  		{
+  			let notification = item.original_notification;
+  			
+  			let popup = document.createElement("home-feed-notification-popup");
+  			popup.notification = notification;
+  			popup.hass = this._hass;
+  			
+  			this.popUp(notification.title, popup, false);
+  		}
   		else
   		{
   			this.helpers.handleClick(this, this._hass, {"entity":item.entity_id, 
@@ -629,6 +839,21 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
    		}
 	}
 	
+	
+	_computeTooltip(hass, notification) {
+    if (!hass || !notification) {
+      return undefined;
+    }
+
+    const d = new Date(notification.created_at);
+    return d.toLocaleDateString(hass.language, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      minute: "numeric",
+      hour: "numeric",
+    });
+  }
 	_buildFeed() {
     	if(!this._hass) return;
 		
@@ -639,34 +864,12 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	  		if(this._config.max_item_count) items.splice(this._config.max_item_count);
 	  		this.feedContent = items;
 			this.requestUpdate();
-			
-			// this.querySelectorAll("hui-markdown-card")
-// 			.forEach(m => {
-// 				
-// 				if(m.content) {
-// 					m.setConfig({"content": m.content, "item": m.item});
-// 					m.hass = this._hass;
-// 				}
-// 				
-// 			});
-// 			
-// 			setTimeout(() => {
-// 				this.querySelectorAll("hui-markdown-card")
-// 				.forEach(m => {
-// 					if(m.content) {
-// 						m.shadowRoot.querySelectorAll("ha-card,ha-card ha-markdown")
-// 						.forEach(e => {
-// 							e.style.backgroundColor = "rgba(0,0,0,0)";
-// 							e.style.padding = "0px 0px 5px 0px";
-// 							e.style.boxShadow = "none";
-// 						});	
-// 					}
-// 				});
-// 			});
   		});
 	}
 	
 	_renderItem(n) {
+		let compact_mode = this._config.compact_mode === true;
+		
 		switch(n.item_type)
 		{
 			case "notification":
@@ -710,6 +913,11 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				var contentText = "Unknown Item Type";
 		}
 		
+		//if(compact_mode && n.item_type != "notification")
+		//{
+		//	let maxContentLength = 50;
+  		//	if(contentText.length > maxContentLength) contentText = contentText.substring(0,maxContentLength - 3) + "...";
+  		//}	
 			
 		if(!n.stateObj && !icon){ 
 			icon = "mdi:bell";
@@ -729,11 +937,9 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 			}
 		}
 		
-		if(n.item_type == "multi_entity" || n.item_type == "calendar_event"){
-			if(n.detail){
-				contentClass = "state-card-dialog";
-				clickable = true;
-			}
+		if(n.item_type == "notification" || ((n.item_type == "multi_entity" || n.item_type == "calendar_event") && n.detail)){
+			contentClass = "state-card-dialog";
+			clickable = true;
 		}
 		
 		
@@ -744,25 +950,30 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		if(allDay){
 			
 			if(n.start.date && this.moment(n.start.date) > this.moment().startOf('day')){
-				var timeString = "Tomorrow";
+				if(this.moment(n.start.date) > this.moment().startOf('day').add(1, 'days')){
+					var timeString = this.moment(n.start.date).format("dddd");
+				}
+				else{
+					var timeString = "Tomorrow";
+				}
 			}
 			else{
 				var timeString = "Today";
 			}
-			timeItem = HomeFeedCardHelpers.html`<div style="display:block; clear:both;">${timeString}</div>`;
+			timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}">${timeString}</div>`;
 		}
 		else
 		{
 			if(n.timeDifference.abs < 60 && n.format == "relative") {
 				// Time difference less than 1 minute, so use a regular div tag with fixed text.
 				// This avoids the time display refreshing too often shortly before or after an item's timestamp
-				let timeString = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "Less than 1 minute ago" : "In less than 1 minute";
-				timeItem = HomeFeedCardHelpers.html`<div style="display:block; clear:both;" title="${new Date(n.timestamp)}">${timeString}</div>`;
+				let timeString = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? (compact_mode ? "< 1 minute ago" : "Less than 1 minute ago") : (compact_mode ? "In less than 1 minute" : "in < 1 minute");
+				timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${new Date(n.timestamp)}">${timeString}</div>`;
 			}
 			else {
 				// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
 				timeItem = HomeFeedCardHelpers.html`<hui-timestamp-display
-									style="display:block; clear:both;"
+									style="display:block; ${compact_mode ? "float:right" : "clear:both;"}"
 									.hass="${this._hass}"
 									.ts="${new Date(n.timestamp)}"
 									.format="${n.format}"
@@ -774,7 +985,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		
 		
 
-		if(n.item_type == "notification"){
+		if(n.item_type == "notification" && !compact_mode){
 			var closeLink = HomeFeedCardHelpers.html`<ha-icon icon='mdi:close' .notificationId='${n.notification_id}' @click=${this._handleDismiss}</ha-icon>`;
 		}
 		else{
@@ -793,11 +1004,11 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				${closeLink}
 			</div>
 			<div class="item-content ${contentClass}" .item=${n} @click=${clickable ? this._handleClick : null}>
-				<ha-markdown class="markdown-content" style="float:left" .content=${contentText}></ha-markdown>
+				<ha-markdown class="markdown-content ${compact_mode ? "compact" : ""}" style="float:left;" .content=${contentText}></ha-markdown>
 				${timeItem}
 			</div>
 		</div>
-		<hr style="clear:both;"/>
+		${compact_mode ? "" : "<hr style=\"clear:both;\"/>"}
 		`;
 	}
   	
@@ -882,3 +1093,4 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 }
 
 customElements.define("home-feed-card", HomeFeedCard);
+customElements.define("home-feed-notification-popup", HomeFeedNotificationPopup);
