@@ -434,7 +434,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   			return stateObj.attributes[i.list_attribute].map(p => {
   				let created = (i.timestamp_property && p[i.timestamp_property]) ? p[i.timestamp_property] : stateObj.last_changed;
   				let timeStamp = isNaN(created) ? created : new Date(created * 1000);
-  				return { ...stateObj, icon: icon, format: (i.format != null ? i.format : "relative"), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, stateObj: stateObj, item_data: p, detail: i.detail_template ? this.applyTemplate(p, i.detail_template, false) : null,  item_type: "multi_entity",   };
+  				return { ...stateObj, icon: icon, format: (i.format != null ? i.format : "relative"), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, stateObj: stateObj, more_info_on_tap: i.more_info_on_tap, item_data: p, detail: i.detail_template ? this.applyTemplate(p, i.detail_template, false) : null,  item_type: "multi_entity",   };
   			}).slice(0, (i.max_items) ? i.max_items : 5);
   		});
 	 	
@@ -520,8 +520,8 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	if(!this.calendars || this.calendars.length == 0) return [];
 	let lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId + this._config.title));
 	if(!lastUpdate || (this.moment && this.moment().diff(lastUpdate, 'minutes') > 15)) {
-		const start = this.moment.utc().format("YYYY-MM-DDTHH:mm:ss");
-    	const end = this.moment.utc().startOf('day').add(7, 'days').format("YYYY-MM-DDTHH:mm:ss");
+		const start = this.moment.utc().startOf('day').format("YYYY-MM-DDTHH:mm:ss");
+    	const end = this.moment.utc().startOf('day').add(2, 'days').format("YYYY-MM-DDTHH:mm:ss");
 		try{
 			var calendars = await Promise.all(
         	this.calendars.map(
@@ -926,22 +926,27 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		var clickable = false;
 		var contentClass = '';
 
-		if(n.item_type == "entity" || n.item_type == "entity_history"){
-			let more_info_on_tap = (typeof n.more_info_on_tap !== 'undefined') ? n.more_info_on_tap 
-				: this._config.more_info_on_tap;
-			
-			if(more_info_on_tap){
+		let more_info_on_tap = (typeof n.more_info_on_tap !== 'undefined') ? n.more_info_on_tap : this._config.more_info_on_tap;
+		
+		if(more_info_on_tap) {
+			switch(n.item_type) {
+				case "entity":
+				case "entity_history":
+				case "notification":
+					clickable = true;
+					break;
+				case "multi_entity":
+				case "calendar_event":
+					clickable = !!n.detail;
+					break;
 				
-				contentClass = "state-card-dialog";
-				clickable = true;
-			}
+			}	
 		}
+		if(compact_mode && n.item_type == "notification") clickable = true; // Notifications always clickable in compact mode
 		
-		if(n.item_type == "notification" || ((n.item_type == "multi_entity" || n.item_type == "calendar_event") && n.detail)){
+		if(clickable){
 			contentClass = "state-card-dialog";
-			clickable = true;
 		}
-		
 		
 		var allDay = (n.item_type == "calendar_event" && n.all_day);
 		
