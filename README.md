@@ -217,6 +217,27 @@ This would be rendered as [Post title](https://www.reddit.com/r/...)
 
 ### detail_template (optional)
 This controls the content of the more-info popup when clicking on the item (if **more_info_on_tap** is enabled).
-This works the same as the **content_template** option but, since it uses the built-in Markdown card, also supports Jinja2 templates.
+This works the same as the **content_template** option but, since it uses the built-in Markdown card, also supports Jinja2 templates. The item properties can be used in the Jinja2 template via the **config.item** property, for example "{{ config.item.body }}". Here is an example with a Reddit sensor:
 
-
+```
+- entity: sensor.reddit_homeassistant
+  content_template: '{{title}}'
+  detail_template: >
+    {% if config.item.body != "" %}
+      {{ config.item.body }}
+    {% else %}
+      {% if config.item.url.endswith(".jpg") or config.item.url.endswith(".png") %}
+        ![{{ config.item.title }}]({{ config.item.url }})
+      {% else %}
+        [{{ config.item.title }}]({{ config.item.url }})
+      {% endif %}
+    {% endif %}
+    
+    
+    [View on Reddit](https://www.reddit.com/r/homeassistant/comments/{{config.item.id }})
+   
+  list_attribute: posts
+  max_items: 10
+  multiple_items: true
+  timestamp_property: created_utc
+```
