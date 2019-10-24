@@ -79,9 +79,11 @@ The maximum height of the feed in CSS format (e.g. "100px", "20em", etc.). When 
 The maximum number of items to show in the feed, useful if scrollbars are disabled.
 
 ### more_info_on_tap (optional, defaults to false)
-When this is true, tapping/clicking and entity will display the more-info dialogue. This can be overridden for individual entities (see later).
+When this is true, tapping/clicking and entity will display the more-info dialogue. This can be overridden for individual entities (see later). From version 0.3.0 this also supports notifications, calendar events and multi-item entities. Multi-item entities require the new **detail_template** option (see later).
 
-Note: This won't work for multi-item entities. It will work for entities using the **include_history** option but, due to limitations of this dialogue, it will always show the latest state of the entity.
+### compact_mode (optional, defaults to false)
+When this is true, a more compact layout is used where the time is displayed on the same line as the item content.
+Note: Due to layout constraints this also removes the dismiss button from notifications and so notifications will always be clickable in compact mode even if **more_info_on_tap** is disabled.
 
 ## Entity object
 
@@ -213,5 +215,8 @@ Advanced example, template generating Markdown:
 '\[{{title}}\]({{url}})' -> "\[Post title\](https://www.reddit.com/r/...)"
 This would be rendered as [Post title](https://www.reddit.com/r/...)
 
+### detail_template (optional)
+This controls the content of the more-info popup when clicking on the item (if **more_info_on_tap** is enabled).
+This works the same as the **content_template** option but, since it uses the built-in Markdown card, also supports Jinja2 templates.
 
 
