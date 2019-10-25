@@ -1013,7 +1013,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				${timeItem}
 			</div>
 		</div>
-		${compact_mode ? "" : "<hr style=\"clear:both;\"/>"}
+		${compact_mode ? HomeFeedCardHelpers.html`` : HomeFeedCardHelpers.html`<hr style="clear:both;"/>`}
 		`;
 	}
   	
