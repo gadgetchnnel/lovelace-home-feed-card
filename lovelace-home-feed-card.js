@@ -12,7 +12,7 @@ class HomeFeedCardHelpers{
 class HomeFeedNotificationPopup extends HomeFeedCardHelpers.LitElement {
 	constructor() {
 		super();
-		this.pushStateInterceptor()
+		this.pushStateInterceptor();	
   	}
   	
   	createRenderRoot() {
@@ -593,7 +593,10 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	 	return JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId + this._config.title));
 	 }
   }
-  
+   notificationIdToTitle(id) {
+			return id.replace(/[^a-zA-Z0-9]/g," ").toLowerCase().replace(/\b(\w)/g, s => s.toUpperCase());
+   }
+   
    async refreshNotifications() {
    	 if(!this._hass) return;
      
@@ -606,7 +609,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		response = response.filter(n => n.notification_id.match(this._config.id_filter));
 	 }
 	 let data = response.map(i => {
-	 	return { ...i, format: "relative", item_type: "notification", original_notification: i };
+	 	return { ...i, title: i.title ? i.title: this.notificationIdToTitle(i.notification_id), format: "relative", item_type: "notification", original_notification: i };
 	 });
 	 localStorage.setItem('home-feed-card-notifications' + this.pageId + this._config.title,JSON.stringify(data));
 	 
