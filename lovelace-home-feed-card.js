@@ -138,7 +138,6 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		try{
 			import("https://unpkg.com/moment@2.24.0/src/moment.js?module").then((module) => {
 			this.moment = module.default;
-			//console.log("Loaded Moment module.");
 			this.buildIfReady();
 				});
 			}
@@ -150,27 +149,13 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		try{
 			import("https://unpkg.com/custom-card-helpers@1.2.2/dist/index.m.js?module").then((module) => {
 			this.helpers = module;
-			//console.log("Loaded custom-card-helpers module.");
 			this.buildIfReady();
 				});
 			}
 			catch(e){
 				console.log("Error Loading custom-card-helpers module", e.message);
 				throw new Error("Error Loading custom-card-helpers module" + e.message);
-		}
-		
-		// try{
-// 			import("https://unpkg.com/lit-html@1.1.2/lit-html.js?module").then((module) => {
-// 			this.lithtml = module;
-// 			//console.log("Loaded lit-html module.");
-// 			this.buildIfReady();
-// 				});
-// 			}
-// 			catch(e){
-// 				console.log("Error Loading lit-html module", e.message);
-// 				throw new Error("Error Loading lit-html module" + e.message);
-// 		}
-		
+		}		
 	}
 	
 	createRenderRoot() {
@@ -543,9 +528,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	 		let endDateTime = this.moment(new Date(event.end_time));
 	 		let eventTime = "";
 	 		if(event.all_day){
-	 			//console.log(i.calendar, i.summary, endDateTime);
 	 			endDateTime = endDateTime.startOf('day').add(-1, 'hours');
-	 			//console.log(i.calendar, i.summary, endDateTime);
 	 			if(startDateTime.clone().startOf('day').isSame(endDateTime.clone().startOf('day'))) // One day event
 	 			{
 	 				eventTime = `${startDateTime.format("dddd, D MMMM")}`;
@@ -828,7 +811,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   		else if(item.item_type == "notification")
   		{
   			let notification = item.original_notification;
-  			
+  			if(!notification.title) notification.title = this.notificationIdToTitle(notification.notification_id);
   			let popup = document.createElement("home-feed-notification-popup");
   			popup.notification = notification;
   			popup.hass = this._hass;
@@ -883,7 +866,6 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				else{
 					var contentText = n.message;
 				}
-				
 				break;
 			case "calendar_event":
 				var icon = "mdi:calendar";
@@ -972,11 +954,26 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		}
 		else
 		{
-			if(n.timeDifference.abs < 60 && n.format == "relative") {
+			let exact_time_difference = this._config.exact_time_difference === true;
+				
+			if(isNaN(n.timeDifference.value)){
+				timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}">${n.timestamp}</div>`;
+			}
+			else if(n.timeDifference.abs < 60 && n.format == "relative" && !exact_time_difference) {
 				// Time difference less than 1 minute, so use a regular div tag with fixed text.
 				// This avoids the time display refreshing too often shortly before or after an item's timestamp
-				let timeString = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? (compact_mode ? "< 1 minute ago" : "Less than 1 minute ago") : (compact_mode ? "In less than 1 minute" : "in < 1 minute");
-				timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${new Date(n.timestamp)}">${timeString}</div>`;
+				
+				if(this._language != "en")
+				{
+					let timeDesc = this._hass.localize("ui.components.relative_time.duration.minute", "count", 1).replace("1", "<1");
+					let tense = n.timeDifference.sign >= 0 ? "past" : "future";
+					let timeString = this._hass.localize(`ui.components.relative_time.${tense}`, "time", timeDesc);
+					timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${new Date(n.timestamp)}">${timeString}</div>`;
+				}
+				else{
+					let timeString = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "<1 minute ago" : "in <1 minute";
+					timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${new Date(n.timestamp)}">${timeString}</div>`;
+				}
 			}
 			else {
 				// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
@@ -1089,6 +1086,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     
   	set hass(hass) {
 		this._hass = hass;
+		this._language = Object.keys(hass.resources)[0];
     	if(this.moment && this.helpers && this._config.entities){
     		this.refreshEntityHistory().then(() => {});
     	}
