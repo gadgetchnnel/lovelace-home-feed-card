@@ -85,6 +85,11 @@ When this is true, tapping/clicking and entity will display the more-info dialog
 When this is true, a more compact layout is used where the time is displayed on the same line as the item content.
 Note: Due to layout constraints this also removes the dismiss button from notifications and so notifications will always be clickable in compact mode even if **more_info_on_tap** is disabled.
 
+### exact_durations (optional, defaults to false)
+By default, durations of less than a minute are displayed as "<1 minute ago" or "in <1 minute". Setting this option to true disables this, and displays the exact duration.
+**Note:** Doing this will make the time difference display refresh every second until the duration is 1 minute
+
+
 ## Entity object
 
 For single-item entities the following options are supported, see the section on multi-item entities for the options available for those.
