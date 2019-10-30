@@ -954,12 +954,12 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		}
 		else
 		{
-			let exact_time_difference = this._config.exact_time_difference === true;
+			let exact_durations = this._config.exact_durations === true;
 				
 			if(isNaN(n.timeDifference.value)){
 				timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}">${n.timestamp}</div>`;
 			}
-			else if(n.timeDifference.abs < 60 && n.format == "relative" && !exact_time_difference) {
+			else if(n.timeDifference.abs < 60 && n.format == "relative" && !exact_durations) {
 				// Time difference less than 1 minute, so use a regular div tag with fixed text.
 				// This avoids the time display refreshing too often shortly before or after an item's timestamp
 				
