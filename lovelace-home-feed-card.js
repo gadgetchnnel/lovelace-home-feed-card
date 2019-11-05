@@ -136,8 +136,8 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 
 	loadModules(){
 		try{
-			import("https://unpkg.com/moment@2.24.0/src/moment.js?module").then((module) => {
-			this.moment = module.default;
+			import("./moment.js").then((module) => {
+			this.moment = window.moment;
 			this.buildIfReady();
 				});
 			}
@@ -147,7 +147,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 			}
 		
 		try{
-			import("https://unpkg.com/custom-card-helpers@1.2.2/dist/index.m.js?module").then((module) => {
+			import("./custom-card-helpers.js").then((module) => {
 			this.helpers = module;
 			this.buildIfReady();
 				});
