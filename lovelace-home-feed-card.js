@@ -138,6 +138,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		try{
 			import("./moment.js").then((module) => {
 			this.moment = window.moment;
+			this.moment.locale(window.navigator.userLanguage || window.navigator.language);
 			this.buildIfReady();
 				});
 			}
