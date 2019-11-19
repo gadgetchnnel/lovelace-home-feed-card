@@ -51,6 +51,10 @@ class HomeFeedNotificationPopup extends HomeFeedCardHelpers.LitElement {
         			overflow-wrap: break-word;
       			}
       			
+      			ha-markdown img {
+                  width: 100%;
+                }
+                
       			a {
         			color: var(--primary-color);
       			}
@@ -136,8 +140,9 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 
 	loadModules(){
 		try{
-			import("https://unpkg.com/moment@2.24.0/src/moment.js?module").then((module) => {
-			this.moment = module.default;
+			import("./moment.js").then((module) => {
+			this.moment = window.moment;
+			this.moment.locale(window.navigator.userLanguage || window.navigator.language);
 			this.buildIfReady();
 				});
 			}
@@ -147,7 +152,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 			}
 		
 		try{
-			import("https://unpkg.com/custom-card-helpers@1.2.2/dist/index.m.js?module").then((module) => {
+			import("./custom-card-helpers.js").then((module) => {
 			this.helpers = module;
 			this.buildIfReady();
 				});
@@ -251,6 +256,10 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
         			color: var(--primary-color);
   				}
   				
+  				ha-markdown img {
+                  width: 100%;
+                }
+                
 				ha-markdown.compact {
 					max-width: 65%;
 				}
@@ -420,7 +429,8 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   				let created = (i.timestamp_property && p[i.timestamp_property]) ? p[i.timestamp_property] : stateObj.last_changed;
   				let timeStamp = isNaN(created) ? created : new Date(created * 1000);
   				return { ...stateObj, icon: icon, format: (i.format != null ? i.format : "relative"), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, stateObj: stateObj, more_info_on_tap: i.more_info_on_tap, item_data: p, detail: i.detail_template ? this.applyTemplate(p, i.detail_template, false) : null,  item_type: "multi_entity",   };
-  			}).slice(0, (i.max_items) ? i.max_items : 5);
+  			}).sort((a, b) => (a.last_changed < b.last_changed) ? 1 : -1) // Sort in reverse order of time to ensure latest items always first
+  			.slice(0, (i.max_items) ? i.max_items : 5);
   		});
 	 	
 	 	return [].concat.apply([], data);
@@ -469,10 +479,35 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   	return [].concat.apply([], history);
   }
   
+  haveEntitiesChanged(entities){
+  		for(const entityConf of this.entities) {
+          let oldState = this.oldStates[entityConf.entity];
+          if(oldState == null) oldState = {"state":"undefined"};
+
+          let newState = this._hass.states[entityConf.entity];
+          if(newState == null) newState = {"state":"undefined"};
+
+          if(newState != oldState) return true;
+        }
+        return false;
+      }
+  
   async refreshEntityHistory() {
   	if(this._config.entities.length == 0) return;
   	
-  	let entityHistory = await this.getLiveEntityHistory();
+  	let oldEntityHistory = JSON.parse(localStorage.getItem('home-feed-card-history' + this.pageId + this._config.title));
+  	if(!oldEntityHistory) oldEntityHistory = [];
+  	var entity_ids = this.entities.filter(i => i.include_history == true).map(i => i.entity).join();
+  	let entityHistory = [];
+  	
+  	//if(this.haveEntitiesChanged(this.entities.filter(i => i.include_history == true)))
+  	//{
+  		entityHistory = await this.getLiveEntityHistory();
+  	//}
+  	//else{
+  	//	entityHistory = oldEntityHistory;
+  	//}
+  	
   	localStorage.setItem('home-feed-card-history' + this.pageId + this._config.title, JSON.stringify(entityHistory));
   	
 	this.buildIfReady();
@@ -1085,6 +1120,8 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     }
     
   	set hass(hass) {
+  		this.oldStates = this._hass != null ? this._hass.states : {};
+  		
 		this._hass = hass;
 		this._language = Object.keys(hass.resources)[0];
     	if(this.moment && this.helpers && this._config.entities){
