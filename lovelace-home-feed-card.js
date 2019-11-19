@@ -52,7 +52,7 @@ class HomeFeedNotificationPopup extends HomeFeedCardHelpers.LitElement {
       			}
       			
       			ha-markdown img {
-                  width: 100%;
+                  max-width: 100%;
                 }
                 
       			a {
@@ -257,7 +257,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   				}
   				
   				ha-markdown img {
-                  width: 100%;
+                  max-width: 100%;
                 }
                 
 				ha-markdown.compact {
