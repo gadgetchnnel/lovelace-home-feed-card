@@ -51,6 +51,10 @@ class HomeFeedNotificationPopup extends HomeFeedCardHelpers.LitElement {
         			overflow-wrap: break-word;
       			}
       			
+      			ha-markdown img {
+                  width: 100%;
+                }
+                
       			a {
         			color: var(--primary-color);
       			}
@@ -252,6 +256,10 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
         			color: var(--primary-color);
   				}
   				
+  				ha-markdown img {
+                  width: 100%;
+                }
+                
 				ha-markdown.compact {
 					max-width: 65%;
 				}
@@ -421,7 +429,8 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   				let created = (i.timestamp_property && p[i.timestamp_property]) ? p[i.timestamp_property] : stateObj.last_changed;
   				let timeStamp = isNaN(created) ? created : new Date(created * 1000);
   				return { ...stateObj, icon: icon, format: (i.format != null ? i.format : "relative"), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, stateObj: stateObj, more_info_on_tap: i.more_info_on_tap, item_data: p, detail: i.detail_template ? this.applyTemplate(p, i.detail_template, false) : null,  item_type: "multi_entity",   };
-  			}).slice(0, (i.max_items) ? i.max_items : 5);
+  			}).sort((a, b) => (a.last_changed < b.last_changed) ? 1 : -1) // Sort in reverse order of time to ensure latest items always first
+  			.slice(0, (i.max_items) ? i.max_items : 5);
   		});
 	 	
 	 	return [].concat.apply([], data);
