@@ -137,7 +137,13 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		this.feedContent = null;
 		this.loadModules();
   	}
-
+  	
+	static get properties() { return {
+    	_config: { type: Object },
+    	hass: { type: Object }
+  		};
+  	}
+  
 	loadModules(){
 		try{
 			import("./moment.js").then((module) => {
@@ -366,6 +372,12 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	}
   
   computeStateDisplay(stateObj, entityConfig){
+  	let domain = entityConfig.entity.split('.')[0];
+  	
+  	if(domain == "automation"){
+  		return "Triggered";
+  	}
+  	
   	var state = entityConfig.state_map && entityConfig.state_map[stateObj.state] ? entityConfig.state_map[stateObj.state] : null;
   	
   	if(!state){
@@ -392,7 +404,10 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   getEntities() {
   		let data = this.entities.filter(i => i.multiple_items !== true && i.include_history !== true).map(i => {
   		let stateObj = this._hass.states[i.entity];
-  		if(!i.exclude_states.includes(stateObj.state))
+  		let domain = i.entity.split(".")[0];
+  		if(!i.exclude_states.includes(stateObj.state) 
+  		&& (domain != "automation" || stateObj.attributes.last_triggered) // Exclude automations which have never been triggered
+  		)
   		{
   			return { ...stateObj, icon: this.getIcon(stateObj, i.icon), entity: i.entity, display_name: ((i.name) ? i.name : stateObj.attributes.friendly_name), format: (i.format != null ? i.format : "relative"), more_info_on_tap: i.more_info_on_tap, content_template: i.content_template, state: this.computeStateDisplay(stateObj, i), stateObj: stateObj, item_type: "entity",   };
 	 	}
@@ -641,7 +656,17 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     					return item.state;
     				}
     				else{
-    					return (item.attributes.last_changed ? item.attributes.last_changed : item.last_changed);
+    					let domain = item.entity_id.split('.')[0];
+    					
+    					if(domain == "automation")
+    					{
+    						//console.log("Item",item);
+    						return item.attributes.last_triggered;
+    					}
+    					else{
+    						return (item.attributes.last_changed ? item.attributes.last_changed : item.last_changed);
+    					}
+    					
     				}
     			default:
     				return new Date().toISOString();
@@ -884,6 +909,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 			case "entity":
 			case "entity_history":
 				var icon = n.icon;
+				let domain = n.entity_id.split('.')[0];
 				
 				if(n.attributes.device_class === "timestamp"){
 					var contentText = `${n.display_name}`;
