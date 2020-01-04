@@ -153,6 +153,14 @@ Example:
             state_map:
               not_home: Unknown Destination
 
+## Handling of Automations
+Starting from 0.3.5b1, automations are handled slightly differently from other entities. The differences are as follows:
+
+* The **last_triggered** attribute is used for the timestamp rather than the **last_changed** attribute, allowing them to be sorted by when they were triggered
+* Automations which have never been triggered (**last_triggered** is None) will be excluded
+* The state of automations will always be "Triggered", so will display by default as "*Automation Name* @ Triggered" in the feed (this can be overridden as normal using the **content_template** option)
+
+
 ## Multi-item Entities
 
 Entities can made to appear as multiple items in your feed if they contain a list of objects as an attribute. For example, the Reddit sensor has attributes like this:
