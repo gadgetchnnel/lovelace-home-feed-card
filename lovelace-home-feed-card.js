@@ -530,8 +530,11 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	if(!this.calendars || this.calendars.length == 0) return [];
 	let lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId + this._config.title));
 	if(!lastUpdate || (this.moment && this.moment().diff(lastUpdate, 'minutes') > 15)) {
-		const start = this.moment.utc().startOf('day').format("YYYY-MM-DDTHH:mm:ss");
-    	const end = this.moment.utc().startOf('day').add(2, 'days').format("YYYY-MM-DDTHH:mm:ss");
+		let calendarDaysBack = (this._config.calendar_days_back ? this._config.calendar_days_back : 0);
+		let calendarDaysForward = (this._config.calendar_days_forward ? this._config.calendar_days_forward : 1);
+		
+		const start = this.moment.utc().startOf('day').add(calendarDaysBack).format("YYYY-MM-DDTHH:mm:ss");
+    	const end = this.moment.utc().startOf('day').add(calendarDaysForward + 1, 'days').format("YYYY-MM-DDTHH:mm:ss");
 		try{
 			var calendars = await Promise.all(
         	this.calendars.map(

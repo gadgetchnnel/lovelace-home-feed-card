@@ -55,6 +55,12 @@ Version 0.2.4 uses dynamic module imports to import the Moment module. Firefox v
 ### calendars (optional)
 This is a list of calendar entities you want events to display for in your feed.
 
+### calendar_days_back (option, defaults to 0)
+The number of days before the current day to include calendar events for in the feed
+
+### calendar_days_forward (option, defaults to 1)
+The number of days after the current day to include calendar events for in the feed. This will include events up to the end of that day so, if you only want the current day, this should be set to 0
+
 ### id_filter (optional)
 This is a regular expression for filtering persistent notifications by notification id. In the example above, "^home_feed_.\*" will result in only notifications with ids starting with home_feed_ from being displayed.
 
