@@ -404,6 +404,15 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   getEntities() {
   		let data = this.entities.filter(i => i.multiple_items !== true && i.include_history !== true).map(i => {
   		let stateObj = this._hass.states[i.entity];
+  		
+  		if(stateObj == null) {
+  			return { entity_id: i.entity, icon: null, entity: i.entity, display_name: this._hass.localize(
+            "ui.panel.lovelace.warning.entity_not_found",
+            "entity",
+            i.entity
+          	), more_info_on_tap: false, 
+          	content_template: null, state: "unavailable", stateObj: null, item_type: "unavailable",   };
+  		}
   		let domain = i.entity.split(".")[0];
   		if(!i.exclude_states.includes(stateObj.state) 
   		&& (domain != "automation" || stateObj.attributes.last_triggered) // Exclude automations which have never been triggered
@@ -932,6 +941,11 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				
 				var contentText = `${n.display_name}`;
 				break;
+			case "unavailable":
+				var icon = "mdi:alert-circle";
+				
+				var contentText = `${n.display_name}`;
+				break;
 			default:
 				var icon = "mdi:bell";
 				var contentText = "Unknown Item Type";
@@ -1048,14 +1062,24 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				${closeLink}
 			</div>
 			<div class="item-content ${contentClass}" .item=${n} @click=${clickable ? this._handleClick : null}>
-				<ha-markdown class="markdown-content ${compact_mode ? "compact" : ""}" style="float:left;" .content=${contentText}></ha-markdown>
-				${timeItem}
+				${this.itemContent(n, compact_mode, contentText)}
+				${n.item_type != "unavailable" ? timeItem : null}
 			</div>
 		</div>
 		${compact_mode ? HomeFeedCardHelpers.html`` : HomeFeedCardHelpers.html`<hr style="clear:both;"/>`}
 		`;
 	}
   	
+  	itemContent(item, compact_mode, contentText){
+  		if(item.item_type == "unavailable"){
+  			return HomeFeedCardHelpers.html`
+  			<hui-warning class="markdown-content ${compact_mode ? "compact" : ""}" style="float:left;">${contentText}</hui-warning>
+  			`;
+  		}
+  		return HomeFeedCardHelpers.html`
+  		<ha-markdown class="markdown-content ${compact_mode ? "compact" : ""}" style="float:left;" .content=${contentText}></ha-markdown>
+  		`;
+  	}
   	get notificationButton() {
       if(!this._notificationButton){
       	this._notificationButton = this.rootElement.querySelector("hui-notifications-button");
