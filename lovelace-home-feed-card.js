@@ -761,14 +761,22 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     moreInfo.large = large;
     //document.querySelector("home-assistant").provideHass(message);
 
-    setTimeout(() => {
-      let interval = setInterval(() => {
-        if (moreInfo.getAttribute('aria-hidden')) {
-          popup.parentNode.removeChild(popup);
-          clearInterval(interval);
-        }
-      }, 100)
-    }, 1000);
+	moreInfo._dialogOpenChanged = function(newVal) {
+    if (!newVal) {
+      console.log("Here",this.stateObj);
+      if(this.stateObj)
+        this.fire("hass-more-info", {entityId: null});
+
+      if (this.shadowRoot == popup.parentNode) {
+        this._page = null;
+        this.shadowRoot.removeChild(popup);
+
+        const oldContent = this.shadowRoot.querySelector("more-info-controls");
+        if(oldContent) oldContent.style['display'] = "";
+      }
+    }
+   }
+   
   history.onpushstate = this.closePopUp;
   return moreInfo;
   }
