@@ -752,6 +752,10 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     popup.appendChild(message);
     this.moreInfo(Object.keys(this._hass.states)[0]);
     let moreInfo = document.querySelector("home-assistant")._moreInfoEl;
+    
+    const oldContent = moreInfo.shadowRoot.querySelector("more-info-controls");
+    if(oldContent) oldContent.style['display'] = 'none';
+
     moreInfo._page = "none";
     moreInfo.shadowRoot.appendChild(popup);
     moreInfo.large = large;
