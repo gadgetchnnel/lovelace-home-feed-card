@@ -463,6 +463,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   getHistoryState(stateObj, item){
   	var newStateObj = {};
   	Object.assign(newStateObj, stateObj);
+  	newStateObj.attributes = item.attributes;
   	newStateObj.state = item.state;
   	newStateObj.last_changed = item.last_changed;
   	newStateObj.last_updated = item.last_updated;
@@ -672,7 +673,6 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     					
     					if(domain == "automation")
     					{
-    						//console.log("Item",item);
     						return item.attributes.last_triggered;
     					}
     					else{
@@ -763,7 +763,6 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 
 	moreInfo._dialogOpenChanged = function(newVal) {
     if (!newVal) {
-      console.log("Here",this.stateObj);
       if(this.stateObj)
         this.fire("hass-more-info", {entityId: null});
 
