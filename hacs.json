@@ -1,5 +1,6 @@
 {
   "name": "Lovelace Home Feed Card",
+  "content_in_root": true,
   "zip_release": true,
   "filename": "dist.zip"
 }
