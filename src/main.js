@@ -1,132 +1,7 @@
-class HomeFeedCardHelpers{
-	
-	static get LitElement(){
-		//return Object.getPrototypeOf(customElements.get("home-assistant-main"));
-		return Object.getPrototypeOf(customElements.get("hui-view"));
-	}
-	static get html(){
-		return HomeFeedCardHelpers.LitElement.prototype.html;
-	}
-}
+import { LitElement, html, css } from "./lit-element.js";
+import { HomeFeedNotificationPopup } from "./popup.js";
 
-class HomeFeedNotificationPopup extends HomeFeedCardHelpers.LitElement {
-	constructor() {
-		super();
-		this.pushStateInterceptor();	
-  	}
-  	
-  	createRenderRoot() {
-		return this;
-	}
-	
-	set notification(notification) {
-		this._notification = notification;
-	}
-	
-	pushStateInterceptor()
-	{
-		(function(history){
-    		var pushState = history.pushState;
-   		 	history.pushState = function(state) {
-        		if (typeof history.onpushstate == "function") {
-            		history.onpushstate({state: state});
-        		}
-        		return pushState.apply(history, arguments);
-    		};
-		})(window.history);
-	}
-	
-	render() {
-		return HomeFeedCardHelpers.html`
-			<style type="text/css">
-				.contents {
-        			padding: 16px;
-        			-ms-user-select: text;
-        			-webkit-user-select: text;
-        			-moz-user-select: text;
-        			user-select: text;
-      			}
-      			
-      			ha-markdown {
-        			overflow-wrap: break-word;
-      			}
-      			
-      			ha-markdown img {
-                  max-width: 100%;
-                }
-                
-      			a {
-        			color: var(--primary-color);
-      			}
-      
-	 			.time {
-        			display: flex;
-        			justify-content: flex-end;
-        			margin-top: 6px;
-      			}
-      			
-      			ha-relative-time {
-        			color: var(--secondary-text-color);
-      			}
-      			
-      			.actions {
-        			border-top: 1px solid #e8e8e8;
-        			padding: 5px 16px;
-      			}
-			</style>
-			<ha-card>
-				<div class="contents">
-					<ha-markdown .hass="${this._hass}" .content="${this._notification.message}"></ha-markdown>
-					<div class="time">
-          				<span>
-            				<ha-relative-time .hass="${this._hass}" .datetime="${this._notification.created_at}"></ha-relative-time>
-          				</span>
-        			</div>
-        			<div class="actions">
-        				<mwc-button .notificationId='${this._notification.notification_id}' @click=${this._handleDismiss}>Dismiss</mwc-button>
-        			</div>
-				</div>
-			</ha-card>
-		`;
-	}
-	closePopUp() {
-    let moreInfo = document.querySelector("home-assistant")._moreInfoEl;
-    if (moreInfo && moreInfo.style.display != "none") {
-    	moreInfo.close();
-    	history.onpushstate = null;
-    }
-   }
-   
-	_handleDismiss(event) {
-  		var id = event.target.notificationId;
-    	this._hass.callService("persistent_notification", "dismiss", {
-      		notification_id: id
-    	});  
-    	this.closePopUp(); 
-   }
-   
-	_computeTooltip(hass, notification) {
-    	if (!hass || !notification) {
-      		return undefined;
-    	}
-	
-    	const d = new Date(notification.created_at);
-    	return d.toLocaleDateString(hass.language, {
-      		year: "numeric",
-      		month: "short",
-      		day: "numeric",
-      		minute: "numeric",
-      		hour: "numeric",
-    	});
-  	}
-	
-	set hass(hass) {
-		this._hass = hass;
-	}
-	
-	
-}
-class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
+class HomeFeedCard extends LitElement {
     constructor() {
 		super();
 		
@@ -165,7 +40,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	}
 	
 	static get stylesheet() {
-		return HomeFeedCardHelpers.html`
+		return html`
 			<style>
 				ha-card {
 			  		padding: 0 16px 16px 16px;
@@ -272,20 +147,20 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 
 	render() {
 		if(!this._hass || !this.moment || !this.helpers){
-			return HomeFeedCardHelpers.html``;
+			return html``;
 		} 
 		else{
 			if(this.feedContent != null){
 				if(this.feedContent.length === 0 && this._config.show_empty === false){
-					return HomeFeedCardHelpers.html``;
+					return html``;
 				}
 				else{
-				return HomeFeedCardHelpers.html`
+				return html`
 				${HomeFeedCard.stylesheet}
 				<ha-card id="card">
 					${!this._config.title
-					? HomeFeedCardHelpers.html``
-					: HomeFeedCardHelpers.html`
+					? html``
+					: html`
 						  <div id="header" class="header">
 						  <div class="name">${this._config.title}</div>
 						</div>
@@ -297,7 +172,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 					}
 			}
 			else{
-				return HomeFeedCardHelpers.html``;
+				return html``;
 			}
 		}
 	}
@@ -308,7 +183,6 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 	 	localStorage.removeItem('home-feed-card-notifications' + this.pageId + this._config.title);
 	 	localStorage.removeItem('home-feed-card-notificationsLastUpdate' + this.pageId + this._config.title);
 	 	localStorage.removeItem('home-feed-card-history' + this.pageId + this._config.title);
-	 	localStorage.removeItem('home-feed-card-historyLastUpdate' + this.pageId + this._config.title);
     }
     
     setConfig(config) {
@@ -482,7 +356,13 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   }
   
   async refreshEntityHistory() {
-  	if(this._config.entities.length == 0) return;
+  	if(!this._config.entities || this._config.entities.length == 0){
+  		// Remove cached history items if there are no entities
+  		if(JSON.parse(localStorage.getItem('home-feed-card-history' + this.pageId + this._config.title))){
+  			localStorage.removeItem('home-feed-card-history' + this.pageId + this._config.title);
+  		}
+  		return;
+  	}
   	
   	let entityHistory = await this.getLiveEntityHistory();
   	localStorage.setItem('home-feed-card-history' + this.pageId + this._config.title, JSON.stringify(entityHistory));
@@ -662,8 +542,30 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
     		}
    }
    
+   debugItem(){
+   		if(!this._config.debug) return [];
+   		let cachedHistory = localStorage.getItem('home-feed-card-history' + this.pageId + this._config.title);
+   		let debugData = "## Debug Information\n\n"+
+   						"**Cache Id:** " + this.pageId + this._config.title + "\n\n"+
+   						"**Cache Status:** " + (cachedHistory ? "From Cache" : "Live");
+   		return [{ 	state: "on", 
+   					attributes: {device_class: "debug"},
+   					icon: "mdi:bug", 
+   					format: "relative", 
+   					entity_id: "home_feed.debug_info", 
+   					entity: "home_feed.debug_info", 
+   					display_name: debugData, 
+   					last_changed: new Date(), 
+   					stateObj: null, 
+   					more_info_on_tap: true, 
+   					item_data: null, 
+   					detail: debugData,
+   					content_template: "{{display_name}}",
+   					item_type: "entity"   
+   				}];
+   }
    async getFeedItems(){
-   		var allItems = [].concat .apply([], await Promise.all([this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities(), this.getEntityHistoryItems()]));
+   		var allItems = [].concat .apply([], await Promise.all([this.debugItem(), this.getNotifications(), this.getEvents(), this.getEntities(), this.getMultiItemEntities(), this.getEntityHistoryItems()]));
    		var now = new Date();
    		allItems = allItems.map(item => {
    			let timeStamp = this.getItemTimestamp(item);
@@ -991,14 +893,14 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 			else{
 				var timeString = "Today";
 			}
-			timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}">${timeString}</div>`;
+			timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}">${timeString}</div>`;
 		}
 		else
 		{
 			let exact_durations = this._config.exact_durations === true;
 				
 			if(isNaN(n.timeDifference.value)){
-				timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}">${n.timestamp}</div>`;
+				timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}">${n.timestamp}</div>`;
 			}
 			else if(n.timeDifference.abs < 60 && n.format == "relative" && !exact_durations) {
 				// Time difference less than 1 minute, so use a regular div tag with fixed text.
@@ -1009,16 +911,16 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 					let timeDesc = this._hass.localize("ui.components.relative_time.duration.minute", "count", 1).replace("1", "<1");
 					let tense = n.timeDifference.sign >= 0 ? "past" : "future";
 					let timeString = this._hass.localize(`ui.components.relative_time.${tense}`, "time", timeDesc);
-					timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${new Date(n.timestamp)}">${timeString}</div>`;
+					timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${new Date(n.timestamp)}">${timeString}</div>`;
 				}
 				else{
 					let timeString = n.timeDifference.sign == 0 ? "now" : n.timeDifference.sign == 1 ? "<1 minute ago" : "in <1 minute";
-					timeItem = HomeFeedCardHelpers.html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${new Date(n.timestamp)}">${timeString}</div>`;
+					timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${new Date(n.timestamp)}">${timeString}</div>`;
 				}
 			}
 			else {
 				// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
-				timeItem = HomeFeedCardHelpers.html`<hui-timestamp-display
+				timeItem = html`<hui-timestamp-display
 									style="display:block; ${compact_mode ? "float:right" : "clear:both;"}"
 									.hass="${this._hass}"
 									.ts="${new Date(n.timestamp)}"
@@ -1032,16 +934,16 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 		
 
 		if(n.item_type == "notification" && !compact_mode){
-			var closeLink = HomeFeedCardHelpers.html`<ha-icon icon='mdi:close' .notificationId='${n.notification_id}' @click=${this._handleDismiss}</ha-icon>`;
+			var closeLink = html`<ha-icon icon='mdi:close' .notificationId='${n.notification_id}' @click=${this._handleDismiss}</ha-icon>`;
 		}
 		else{
-			var closeLink = HomeFeedCardHelpers.html``;
+			var closeLink = html``;
 		}
 		
 		let stateObj = n.stateObj ? n.stateObj : {"entity_id": "", "state": "unknown", "attributes":{}};
 		//let contentItem = n.item_type == "multi_entity" ? n.item_data : n.stateObj; 
 		
-		return HomeFeedCardHelpers.html`
+		return html`
 		<div class="item-container">
 			<div class="item-left">
 				<state-badge .stateObj='${stateObj}' .overrideIcon='${icon}'/>
@@ -1054,17 +956,17 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
 				${n.item_type != "unavailable" ? timeItem : null}
 			</div>
 		</div>
-		${compact_mode ? HomeFeedCardHelpers.html`` : HomeFeedCardHelpers.html`<hr style="clear:both;"/>`}
+		${compact_mode ? html`` : html`<hr style="clear:both;"/>`}
 		`;
 	}
   	
   	itemContent(item, compact_mode, contentText){
   		if(item.item_type == "unavailable"){
-  			return HomeFeedCardHelpers.html`
+  			return html`
   			<hui-warning class="markdown-content ${compact_mode ? "compact" : ""}" style="float:left;">${contentText}</hui-warning>
   			`;
   		}
-  		return HomeFeedCardHelpers.html`
+  		return html`
   		<ha-markdown class="markdown-content ${compact_mode ? "compact" : ""}" style="float:left;" .content=${contentText}></ha-markdown>
   		`;
   	}
@@ -1138,7 +1040,7 @@ class HomeFeedCard extends HomeFeedCardHelpers.LitElement {
   	set hass(hass) {
 		this._hass = hass;
 		this._language = Object.keys(hass.resources)[0];
-    	if(this.moment && this.helpers && this._config.entities){
+    	if(this.moment && this.helpers){
     		this.refreshEntityHistory().then(() => {});
     	}
 		this.buildIfReady();
