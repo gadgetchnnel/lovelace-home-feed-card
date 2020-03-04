@@ -338,8 +338,11 @@ class HomeFeedCard extends LitElement {
   	var entity_ids = this.entities.filter(i => i.include_history == true).map(i => i.entity).join();
   	
   	if(!entity_ids || entity_ids.length == 0) return []; // Don't need to call history API if there are no items requiring history
-  	
-  	let history = (await this._hass.callApi('get', 'history/period?filter_entity_id=' + entity_ids))
+  	let historyDaysBack = (this._config.history_days_back ? this._config.history_days_back : 0);
+	const start = this.moment.utc().startOf('day').add(-historyDaysBack, 'days').format("YYYY-MM-DDTHH:mm:ss");
+    const end = this.moment.utc().format("YYYY-MM-DDTHH:mm:ss");
+    
+  	let history = (await this._hass.callApi('get', `history/period/${start}?end_time=${end}&filter_entity_id=${entity_ids}`))
   	              .map(arr => {
   				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
   				let stateObj = this._hass.states[entityConfig.entity];
@@ -399,9 +402,8 @@ class HomeFeedCard extends LitElement {
 	if(!lastUpdate || (this.moment && this.moment().diff(lastUpdate, 'minutes') > 15)) {
 		let calendarDaysBack = (this._config.calendar_days_back ? this._config.calendar_days_back : 0);
 		let calendarDaysForward = (this._config.calendar_days_forward ? this._config.calendar_days_forward : 1);
-		
-		const start = this.moment.utc().startOf('day').add(calendarDaysBack).format("YYYY-MM-DDTHH:mm:ss");
-    	const end = this.moment.utc().startOf('day').add(calendarDaysForward + 1, 'days').format("YYYY-MM-DDTHH:mm:ss");
+		const start = this.moment.utc().startOf('day').add(-calendarDaysBack, 'days').format("YYYY-MM-DDTHH:mm:ss");
+		const end = this.moment.utc().startOf('day').add(calendarDaysForward + 1, 'days').format("YYYY-MM-DDTHH:mm:ss");
 		try{
 			var calendars = await Promise.all(
         	this.calendars.map(
