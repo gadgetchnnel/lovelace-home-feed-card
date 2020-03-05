@@ -39,6 +39,8 @@ class HomeFeedCard extends LitElement {
     	return root;
 	}
 	
+	
+	
 	static get stylesheet() {
 		return html`
 			<style>
@@ -176,13 +178,16 @@ class HomeFeedCard extends LitElement {
 			}
 		}
 	}
-
+	get cacheId() {
+		return this._config.card_id ? this._config.card_id : this.pageId + this._config.title;
+	}
+	
     clearCache() {
-    	localStorage.removeItem('home-feed-card-events' + this.pageId + this._config.title);
-	 	localStorage.removeItem('home-feed-card-eventsLastUpdate' + this.pageId + this._config.title);
-	 	localStorage.removeItem('home-feed-card-notifications' + this.pageId + this._config.title);
-	 	localStorage.removeItem('home-feed-card-notificationsLastUpdate' + this.pageId + this._config.title);
-	 	localStorage.removeItem('home-feed-card-history' + this.pageId + this._config.title);
+    	localStorage.removeItem('home-feed-card-events' + this.cacheId);
+	 	localStorage.removeItem('home-feed-card-eventsLastUpdate' + this.cacheId);
+	 	localStorage.removeItem('home-feed-card-notifications' + this.cacheId);
+	 	localStorage.removeItem('home-feed-card-notificationsLastUpdate' + this.cacheId);
+	 	localStorage.removeItem('home-feed-card-history' + this.cacheId);
     }
     
     setConfig(config) {
@@ -361,14 +366,14 @@ class HomeFeedCard extends LitElement {
   async refreshEntityHistory() {
   	if(!this._config.entities || this._config.entities.length == 0){
   		// Remove cached history items if there are no entities
-  		if(JSON.parse(localStorage.getItem('home-feed-card-history' + this.pageId + this._config.title))){
-  			localStorage.removeItem('home-feed-card-history' + this.pageId + this._config.title);
+  		if(JSON.parse(localStorage.getItem('home-feed-card-history' + this.cacheId))){
+  			localStorage.removeItem('home-feed-card-history' + this.cacheId);
   		}
   		return;
   	}
   	
   	let entityHistory = await this.getLiveEntityHistory();
-  	localStorage.setItem('home-feed-card-history' + this.pageId + this._config.title, JSON.stringify(entityHistory));
+  	localStorage.setItem('home-feed-card-history' + this.cacheId, JSON.stringify(entityHistory));
   	
 	this.buildIfReady();
   }
@@ -398,7 +403,7 @@ class HomeFeedCard extends LitElement {
    
   async getEvents() {
 	if(!this.calendars || this.calendars.length == 0) return [];
-	let lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.pageId + this._config.title));
+	let lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.cacheId));
 	if(!lastUpdate || (this.moment && this.moment().diff(lastUpdate, 'minutes') > 15)) {
 		let calendarDaysBack = (this._config.calendar_days_back ? this._config.calendar_days_back : 0);
 		let calendarDaysForward = (this._config.calendar_days_forward ? this._config.calendar_days_forward : 1);
@@ -465,12 +470,12 @@ class HomeFeedCard extends LitElement {
 	 		return event;
 	 	});
 	 	
-	 	localStorage.setItem('home-feed-card-events' + this.pageId + this._config.title,JSON.stringify(data));
-	 	localStorage.setItem('home-feed-card-eventsLastUpdate' + this.pageId + this._config.title,JSON.stringify(this.moment()));
+	 	localStorage.setItem('home-feed-card-events' + this.cacheId,JSON.stringify(data));
+	 	localStorage.setItem('home-feed-card-eventsLastUpdate' + this.cacheId,JSON.stringify(this.moment()));
 	 	return data;
 	 }
 	 else{
-	 	return JSON.parse(localStorage.getItem('home-feed-card-events' + this.pageId + this._config.title));
+	 	return JSON.parse(localStorage.getItem('home-feed-card-events' + this.cacheId));
 	 }
   }
    notificationIdToTitle(id) {
@@ -491,10 +496,10 @@ class HomeFeedCard extends LitElement {
 	 let data = response.map(i => {
 	 	return { ...i, title: i.title ? i.title: this.notificationIdToTitle(i.notification_id), format: "relative", item_type: "notification", original_notification: i };
 	 });
-	 localStorage.setItem('home-feed-card-notifications' + this.pageId + this._config.title,JSON.stringify(data));
+	 localStorage.setItem('home-feed-card-notifications' + this.cacheId,JSON.stringify(data));
 	 
 	 if(this.moment){
-	 	localStorage.setItem('home-feed-card-notificationsLastUpdate' + this.pageId + this._config.title,JSON.stringify(this.moment()));
+	 	localStorage.setItem('home-feed-card-notificationsLastUpdate' + this.cacheId,JSON.stringify(this.moment()));
 	 }
 	 
 	 this.refreshingNotifications = false;
@@ -503,14 +508,14 @@ class HomeFeedCard extends LitElement {
    }
    
    getNotifications() {
-   	 if(!JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.pageId + this._config.title))) return [];
+   	 if(!JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.cacheId))) return [];
    	 
-     return JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.pageId + this._config.title));
+     return JSON.parse(localStorage.getItem('home-feed-card-notifications' + this.cacheId));
    }
    
    async getEntityHistoryItems() {
-   	if(!JSON.parse(localStorage.getItem('home-feed-card-history' + this.pageId + this._config.title))) return [];
-   	return JSON.parse(localStorage.getItem('home-feed-card-history' + this.pageId + this._config.title));
+   	if(!JSON.parse(localStorage.getItem('home-feed-card-history' + this.cacheId))) return [];
+   	return JSON.parse(localStorage.getItem('home-feed-card-history' + this.cacheId));
    }
    
    getItemTimestamp(item)
@@ -546,9 +551,9 @@ class HomeFeedCard extends LitElement {
    
    debugItem(){
    		if(!this._config.debug) return [];
-   		let cachedHistory = localStorage.getItem('home-feed-card-history' + this.pageId + this._config.title);
+   		let cachedHistory = localStorage.getItem('home-feed-card-history' + this.cacheId);
    		let debugData = "## Debug Information\n\n"+
-   						"**Cache Id:** " + this.pageId + this._config.title + "\n\n"+
+   						"**Cache Id:** " + this.cacheId + "\n\n"+
    						"**Cache Status:** " + (cachedHistory ? "From Cache" : "Live");
    		return [{ 	state: "on", 
    					attributes: {device_class: "debug"},
@@ -1013,7 +1018,7 @@ class HomeFeedCard extends LitElement {
     
     notificationMonitor() {
 	  let oldNotificationCount = this.notificationCount ? this.notificationCount : "0";
-	  let notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.pageId + this._config.title));
+	  let notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.cacheId));
       if(this._hass){
         const filtered = Object.keys(this._hass.states).filter(key => key.startsWith("persistent_notification."));
       	let notificationCount = filtered.length;
@@ -1031,7 +1036,7 @@ class HomeFeedCard extends LitElement {
     
     buildIfReady(){
     	if(!this._hass || !this.moment || !this.helpers) return;
-		let notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.pageId + this._config.title));
+		let notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.cacheId));
 		
     	if((!this.loadedNotifications || !notificationsLastUpdate) && this.moment){
     		this.refreshNotifications().then(() => {});
