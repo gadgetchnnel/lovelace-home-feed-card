@@ -1,5 +1,9 @@
 import { LitElement, html, css } from "./lit-element.js";
 import { HomeFeedNotificationPopup } from "./popup.js";
+import { computeStateDisplay as computeStateDisplayHelper, handleClick } from "custom-card-helpers";
+import { createCard } from "card-tools/src/lovelace-element";
+
+require('./locale.js');
 
 class HomeFeedCard extends LitElement {
     constructor() {
@@ -10,8 +14,8 @@ class HomeFeedCard extends LitElement {
 		this.loadedNotifications = false;
 		this.refreshingNotifications = false;
 		this.feedContent = null;
-		this.helpers = require('custom-card-helpers');
 		this.moment = require('moment');
+		
 		this.moment.locale(window.navigator.userLanguage || window.navigator.language);
   	}
   	
@@ -148,7 +152,7 @@ class HomeFeedCard extends LitElement {
 	}
 
 	render() {
-		if(!this._hass || !this.moment || !this.helpers){
+		if(!this._hass || !this.moment){
 			return html``;
 		} 
 		else{
@@ -237,7 +241,7 @@ class HomeFeedCard extends LitElement {
   	var state = entityConfig.state_map && entityConfig.state_map[stateObj.state] ? entityConfig.state_map[stateObj.state] : null;
   	
   	if(!state){
-  		state = this.helpers.computeStateDisplay(this._hass.localize, stateObj);
+  		state = computeStateDisplayHelper(this._hass.localize, stateObj);
   	}
   	
   	return state;
@@ -715,7 +719,7 @@ class HomeFeedCard extends LitElement {
   			mock_hass.states[item.entity_id] = item.stateObj;
   			
   			let config = {"type":"custom:hui-entities-card", "entities": [{"entity":item.entity_id,"secondary_info":"last-changed"}, {"type":"custom:hui-history-graph-card","entities":[item.entity_id]}]};
-  			let popup = this.helpers.createThing(config);
+  			let popup = createCard(config);
   			
   			popup.hass = mock_hass;
    			
@@ -738,7 +742,7 @@ class HomeFeedCard extends LitElement {
   			Object.assign(mock_hass, this._hass);
   			
   			let config = {"type":"custom:hui-markdown-card", "content": item.detail, "item": item.item_data};
-  			let popup = this.helpers.createThing(config);
+  			let popup = createCard(config);
   			popup.hass = this._hass;
   			
   			setTimeout(()=>{
@@ -764,7 +768,7 @@ class HomeFeedCard extends LitElement {
   		}
   		else
   		{
-  			this.helpers.handleClick(this, this._hass, {"entity":item.entity_id, 
+  			handleClick(this, this._hass, {"entity":item.entity_id, 
    				"tap_action":{"action":"more-info"}}, false, false); 
    		}
 	}
@@ -1035,7 +1039,7 @@ class HomeFeedCard extends LitElement {
     }
     
     buildIfReady(){
-    	if(!this._hass || !this.moment || !this.helpers) return;
+    	if(!this._hass || !this.moment) return;
 		let notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.cacheId));
 		
     	if((!this.loadedNotifications || !notificationsLastUpdate) && this.moment){
@@ -1047,7 +1051,7 @@ class HomeFeedCard extends LitElement {
   	set hass(hass) {
 		this._hass = hass;
 		this._language = Object.keys(hass.resources)[0];
-    	if(this.moment && this.helpers){
+    	if(this.moment){
     		this.refreshEntityHistory().then(() => {});
     	}
 		this.buildIfReady();
