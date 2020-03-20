@@ -34,6 +34,7 @@ Version 0.2.4 uses dynamic module imports to import the Moment module. Firefox v
 
     type: 'custom:home-feed-card'
       title: Home Feed
+      card_id: main_feed
       show_empty: false
       calendars:
         - calendar.home_calendar
@@ -53,6 +54,9 @@ Version 0.2.4 uses dynamic module imports to import the Moment module. Firefox v
             content_template: '[{{title}}]({{url}})'
 
 ![Example](https://user-images.githubusercontent.com/2099542/53899297-d0abb580-4031-11e9-8357-ac45c71e95f5.png)
+
+### card_id (optional, added in 0.4.0)
+If this is set, it is used as the key for cacheing the feed in Local Storage, otherwise a key based on URL and card title is used.
 
 ### calendars (optional)
 This is a list of calendar entities you want events to display for in your feed.
