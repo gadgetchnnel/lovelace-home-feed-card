@@ -63,6 +63,10 @@ The number of days before the current day to include calendar events for in the 
 ### calendar_days_forward (optionla, defaults to 1, added in 0.3.5b2)
 The number of days after the current day to include calendar events for in the feed. This will include events up to the end of that day so, if you only want the current day, this should be set to 0
 
+
+### history_days_back (optional, defaults to 0, added in 0.4.0b3)
+The number of days before the current day to include event history for in the feed
+
 ### id_filter (optional)
 This is a regular expression for filtering persistent notifications by notification id. In the example above, "^home_feed_.\*" will result in only notifications with ids starting with home_feed_ from being displayed.
 
