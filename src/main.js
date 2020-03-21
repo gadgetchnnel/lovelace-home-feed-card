@@ -291,6 +291,10 @@ class HomeFeedCard extends LitElement {
   applyTemplate(item, template, translateToJinja = false){
   	var result = template;
   	
+  	// If the item is just a string (e.g. Todoist calendar as a multi-item entity) convert to an object with a key of "value"
+  	
+  	if(typeof item === "string") item = {value: item};
+  	
   	Object.keys(item).forEach(p => {
   		result = result.replace("{{" + p + "}}", translateToJinja ? "{{ config.item." + p + " }}" : item[p]);
   	});
