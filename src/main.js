@@ -313,7 +313,10 @@ class HomeFeedCard extends LitElement {
   		let data = this.entities.filter(i => i.multiple_items === true && i.list_attribute && i.content_template).map(i =>{
   			let stateObj = this._hass.states[i.entity];
   			let icon = this.getIcon(stateObj, i.icon)
-  			return stateObj.attributes[i.list_attribute].map(p => {
+  			
+  			let items = (stateObj.attributes[i.list_attribute]) ? stateObj.attributes[i.list_attribute] : [];
+  			
+  			return items.map(p => {
   				let created = (i.timestamp_property && p[i.timestamp_property]) ? p[i.timestamp_property] : stateObj.last_changed;
   				let timeStamp = isNaN(created) ? created : new Date(created * 1000);
   				return { ...stateObj, icon: icon, format: (i.format != null ? i.format : "relative"), entity: i.entity, display_name: this.applyTemplate(p, i.content_template), last_changed: timeStamp, stateObj: stateObj, more_info_on_tap: i.more_info_on_tap, item_data: p, detail: i.detail_template ? this.applyTemplate(p, i.detail_template, false) : null,  item_type: "multi_entity",   };
