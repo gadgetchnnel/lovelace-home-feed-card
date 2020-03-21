@@ -896,10 +896,11 @@ class HomeFeedCard extends LitElement {
 		var timeItem;
 
 		if(allDay){
+			let date = n.start.date ? this.moment(n.start.date) : this.moment(n.start).startOf('day');
 			
-			if(n.start.date && this.moment(n.start.date) > this.moment().startOf('day')){
+			if(date > this.moment().startOf('day')){
 				if(this.moment(n.start.date) > this.moment().startOf('day').add(1, 'days')){
-					var timeString = this.moment(n.start.date).format("dddd");
+					var timeString = date.format("dddd");
 				}
 				else{
 					var timeString = "Tomorrow";
