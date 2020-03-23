@@ -3,7 +3,7 @@ import { HomeFeedNotificationPopup } from "./popup.js";
 import { computeStateDisplay as computeStateDisplayHelper, handleClick } from "custom-card-helpers";
 import { createCard } from "card-tools/src/lovelace-element";
 
-require('./locale.js');
+import { getCalendarString } from "./locale.js";
 
 class HomeFeedCard extends LitElement {
     constructor() {
@@ -15,8 +15,9 @@ class HomeFeedCard extends LitElement {
 		this.refreshingNotifications = false;
 		this.feedContent = null;
 		this.moment = require('moment');
-		
-		this.moment.locale(window.navigator.userLanguage || window.navigator.language);
+		let lang = window.navigator.userLanguage || window.navigator.language;
+		if(lang == "hy") lang = "hy-am"; // "hy" (Armenian) wrongly maps to zh-tw (Taiwan Chinese)
+		this.moment.locale(lang);
   	}
   	
 	static get properties() { return {
@@ -897,22 +898,49 @@ class HomeFeedCard extends LitElement {
 		var allDay = (n.item_type == "calendar_event" && n.all_day);
 		
 		var timeItem;
-
+		
 		if(allDay){
-			let date = n.start.date ? this.moment(n.start.date) : this.moment(n.start).startOf('day');
+			let date = n.start.date ? this.moment(n.start.date).startOf('day') : this.moment(n.start).startOf('day');
+			let endDate = (n.end.date ? this.moment(n.end.date).startOf('day') : this.moment(n.end).startOf('day'));
+			// Fix end date for all day events
+			endDate = endDate.add(-1, 'hours').startOf('day');
 			
-			if(date > this.moment().startOf('day')){
-				if(this.moment(n.start.date) > this.moment().startOf('day').add(1, 'days')){
-					var timeString = date.format("dddd");
-				}
-				else{
-					var timeString = "Tomorrow";
-				}
+			let days = Math.abs(date.diff(this.moment().startOf('day'),'days'));
+			
+			if(days <= 7){
+				var timeString = getCalendarString(date);
+				
+				if(endDate > date) {
+      				let endTimeString = getCalendarString(endDate);
+      				if(endTimeString == endDate.format("L")){
+      					endTimeString = endDate.toDate().toLocaleDateString(this._hass.language, {
+        					year: "numeric",
+        					month: "long",
+        					day: "numeric",
+      					});
+      				}
+      				timeString = timeString + " - " + endTimeString;
+      			}
+      			
+				timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${date.toDate()} - ${endDate.toDate()}">${timeString}</div>`;
 			}
 			else{
-				var timeString = "Today";
+				var timeString = date.toDate().toLocaleDateString(this._hass.language, {
+        			year: "numeric",
+        			month: "long",
+        			day: "numeric",
+      			});
+      			
+      			if(endDate > date) {
+      				timeString = timeString + " - " + endDate.toDate().toLocaleDateString(this._hass.language, {
+        				year: "numeric",
+        				month: "long",
+        				day: "numeric",
+      				});
+      			}
+				
+				timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${date.toDate()} - ${endDate().toDate()}">${timeString}</div>`;
 			}
-			timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}">${timeString}</div>`;
 		}
 		else
 		{

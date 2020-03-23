@@ -59,3 +59,52 @@ require('moment/locale/vi');
 require('moment/locale/zh-cn');
 require('moment/locale/zh-hk');
 require('moment/locale/zh-tw');
+
+export const getCalendarString = function(date){
+	var timeString = date.calendar();
+	switch(date.locale())
+	{
+		case "ca":
+		case "de":
+		case "de-ch":
+		case "es":
+			timeString = timeString.replace(` ${date.format("LT")}`, "");
+			timeString = timeString.substring(0, timeString.lastIndexOf(" ", timeString.lastIndexOf(" ")-1));
+			break;
+		case "et":
+		case "hi":
+		case "ta":
+		case "te":
+			timeString = timeString.replace(` ${date.format("LT")}`, "");
+			timeString = timeString.replace(",","");
+			break;
+		case "eu":
+		case "hu":
+		case "zh-cn":
+		case "zh-hk":
+			timeString = timeString.replace(`${date.format("LT")}`, "");
+			if(timeString.includes(" ")){
+				timeString = timeString.substring(0, timeString.lastIndexOf(" "));
+			}
+			break;
+		case "hy-am":
+		case "ar":
+			timeString = timeString.replace(` ${date.format("LT")}`, "");
+			if(timeString.includes(" ")){
+				timeString = timeString.substring(0, timeString.lastIndexOf(" ", timeString.lastIndexOf(" ")-1));
+			}
+			break;
+		case "ja":
+		case "ko":
+		case "lt":
+		case "sv":
+			timeString = timeString.replace(` ${date.format("LT")}`, "");
+			break;
+		default:
+			timeString = timeString.replace(` ${date.format("LT")}`, "");
+			if(timeString.includes(" ")){
+				timeString = timeString.substring(0, timeString.lastIndexOf(" "));
+			}
+	}
+	return timeString;
+}
