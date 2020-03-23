@@ -939,7 +939,7 @@ class HomeFeedCard extends LitElement {
       				});
       			}
 				
-				timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${date.toDate()} - ${endDate().toDate()}">${timeString}</div>`;
+				timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${date.toDate()} - ${endDate.toDate()}">${timeString}</div>`;
 			}
 		}
 		else
