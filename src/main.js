@@ -359,7 +359,7 @@ class HomeFeedCard extends LitElement {
 	const start = this.moment.utc().startOf('day').add(-historyDaysBack, 'days').format("YYYY-MM-DDTHH:mm:ss");
     const end = this.moment.utc().format("YYYY-MM-DDTHH:mm:ss");
     
-  	let history = (await this._hass.callApi('get', `history/period/${start}?end_time=${end}&filter_entity_id=${entity_ids}`))
+  	let history = (await this._hass.callApi('get', `history/period/${start}Z?end_time=${end}Z&filter_entity_id=${entity_ids}`))
   	              .map(arr => {
   				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
   				let stateObj = this._hass.states[entityConfig.entity];
