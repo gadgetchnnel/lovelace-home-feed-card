@@ -15,9 +15,9 @@ class HomeFeedCard extends LitElement {
 		this.refreshingNotifications = false;
 		this.feedContent = null;
 		this.moment = require('moment');
-		let lang = window.navigator.userLanguage || window.navigator.language;
-		if(lang == "hy") lang = "hy-am"; // "hy" (Armenian) wrongly maps to zh-tw (Taiwan Chinese)
-		this.moment.locale(lang);
+		this.browser_language = window.navigator.userLanguage || window.navigator.language;
+		if(this.browser_language == "hy") this.browser_language = "hy-am"; // "hy" (Armenian) wrongly maps to zh-tw (Taiwan Chinese)
+		this.moment.locale(this.browser_language);
   	}
   	
 	static get properties() { return {
@@ -788,7 +788,7 @@ class HomeFeedCard extends LitElement {
     }
 
     const d = new Date(notification.created_at);
-    return d.toLocaleDateString(hass.language, {
+    return d.toLocaleDateString(this.browser_language, {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -913,7 +913,7 @@ class HomeFeedCard extends LitElement {
 				if(endDate > date) {
       				let endTimeString = getCalendarString(endDate);
       				if(endTimeString == endDate.format("L")){
-      					endTimeString = endDate.toDate().toLocaleDateString(this._hass.language, {
+      					endTimeString = endDate.toDate().toLocaleDateString(this.browser_language, {
         					year: "numeric",
         					month: "long",
         					day: "numeric",
@@ -925,14 +925,14 @@ class HomeFeedCard extends LitElement {
 				timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${date.toDate()} - ${endDate.toDate()}">${timeString}</div>`;
 			}
 			else{
-				var timeString = date.toDate().toLocaleDateString(this._hass.language, {
+				var timeString = date.toDate().toLocaleDateString(this.browser_language, {
         			year: "numeric",
         			month: "long",
         			day: "numeric",
       			});
       			
       			if(endDate > date) {
-      				timeString = timeString + " - " + endDate.toDate().toLocaleDateString(this._hass.language, {
+      				timeString = timeString + " - " + endDate.toDate().toLocaleDateString(this.browser_language, {
         				year: "numeric",
         				month: "long",
         				day: "numeric",
@@ -967,9 +967,13 @@ class HomeFeedCard extends LitElement {
 			}
 			else {
 				// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
+				let tsHass = {};
+        		Object.assign(tsHass, this._hass);
+        		tsHass.language = this.browser_language;
+        		
 				timeItem = html`<hui-timestamp-display
 									style="display:block; ${compact_mode ? "float:right" : "clear:both;"}"
-									.hass="${this._hass}"
+									.hass="${tsHass}"
 									.ts="${new Date(n.timestamp)}"
 									.format="${n.format}"
 									title="${new Date(n.timestamp)}"
