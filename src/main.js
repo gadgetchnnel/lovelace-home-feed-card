@@ -566,7 +566,10 @@ class HomeFeedCard extends LitElement {
    		let cachedHistory = localStorage.getItem('home-feed-card-history' + this.cacheId);
    		let debugData = "## Debug Information\n\n"+
    						"**Cache Id:** " + this.cacheId + "\n\n"+
-   						"**Cache Status:** " + (cachedHistory ? "From Cache" : "Live");
+   						"**Cache Status:** " + (cachedHistory ? "From Cache" : "Live") + "\n\n"+
+   						"**Language (Home Assistant):** " + (this._hass ? this._hass.language : "unknown") + "\n\n"+
+   						"**Language (Browser):** " + (this.browser_language ? this.browser_language : "unknown");
+   		
    		return [{ 	state: "on", 
    					attributes: {device_class: "debug"},
    					icon: "mdi:bug", 
@@ -1004,7 +1007,7 @@ class HomeFeedCard extends LitElement {
 			</div>
 			<div class="item-content ${contentClass}" .item=${n} @click=${clickable ? this._handleClick : null}>
 				${this.itemContent(n, compact_mode, contentText)}
-				${n.item_type != "unavailable" ? timeItem : null}
+				${n.item_type != "unavailable" && n.entity_id != "home_feed.debug_info" ? timeItem : null}
 			</div>
 		</div>
 		${compact_mode ? html`` : html`<hr style="clear:both;"/>`}
