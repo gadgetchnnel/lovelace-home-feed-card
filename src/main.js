@@ -1,7 +1,8 @@
 import { LitElement, html, css } from "./lit-element.js";
 import { HomeFeedNotificationPopup } from "./popup.js";
+import { versionGreaterOrEqual } from "./helpers/hass-version.js";
 import { computeStateDisplay as computeStateDisplayHelper } from "./helpers/compute-state-display.js";
-import { handleClick } from "custom-card-helpers";
+import { handleClick, computeStateDisplay as computeStateDisplayLegacy  } from "custom-card-helpers";
 import { createCard } from "card-tools/src/lovelace-element";
 
 import { getCalendarString } from "./locale.js";
@@ -243,7 +244,9 @@ class HomeFeedCard extends LitElement {
   	var state = entityConfig.state_map && entityConfig.state_map[stateObj.state] ? entityConfig.state_map[stateObj.state] : null;
   	
   	if(!state){
-  		state = computeStateDisplayHelper(this._hass.localize, stateObj);
+  		state = versionGreaterOrEqual(this.hass_version, "0.109.0") 
+  			? computeStateDisplayHelper(this._hass.localize, stateObj) 
+  			: computeStateDisplayLegacy(this._hass.localize, stateObj);
   	}
   	
   	return state;
@@ -792,7 +795,7 @@ class HomeFeedCard extends LitElement {
     }
 
     const d = new Date(notification.created_at);
-    return d.toLocaleDateString(this.browser_language, {
+    return d.toLocaleDateString(this._hass.language, {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -917,7 +920,7 @@ class HomeFeedCard extends LitElement {
 				if(endDate > date) {
       				let endTimeString = getCalendarString(endDate);
       				if(endTimeString == endDate.format("L")){
-      					endTimeString = endDate.toDate().toLocaleDateString(this.browser_language, {
+      					endTimeString = endDate.toDate().toLocaleDateString(this._hass.language, {
         					year: "numeric",
         					month: "long",
         					day: "numeric",
@@ -929,14 +932,14 @@ class HomeFeedCard extends LitElement {
 				timeItem = html`<div style="display:block; ${compact_mode ? "float:right" : "clear:both;"}" title="${date.toDate()} - ${endDate.toDate()}">${timeString}</div>`;
 			}
 			else{
-				var timeString = date.toDate().toLocaleDateString(this.browser_language, {
+				var timeString = date.toDate().toLocaleDateString(this._language, {
         			year: "numeric",
         			month: "long",
         			day: "numeric",
       			});
       			
       			if(endDate > date) {
-      				timeString = timeString + " - " + endDate.toDate().toLocaleDateString(this.browser_language, {
+      				timeString = timeString + " - " + endDate.toDate().toLocaleDateString(this._hass.language, {
         				year: "numeric",
         				month: "long",
         				day: "numeric",
@@ -971,13 +974,9 @@ class HomeFeedCard extends LitElement {
 			}
 			else {
 				// Time difference creater than or equal to 1 minute, so use hui-timestamp-display in relative mode
-				let tsHass = {};
-        		Object.assign(tsHass, this._hass);
-        		tsHass.language = this.browser_language;
-        		
 				timeItem = html`<hui-timestamp-display
 									style="display:block; ${compact_mode ? "float:right" : "clear:both;"}"
-									.hass="${tsHass}"
+									.hass="${this._hass}"
 									.ts="${new Date(n.timestamp)}"
 									.format="${n.format}"
 									title="${new Date(n.timestamp)}"
@@ -1094,6 +1093,7 @@ class HomeFeedCard extends LitElement {
     
   	set hass(hass) {
 		this._hass = hass;
+		this.hass_version = hass.config.version;
 		this._language = Object.keys(hass.resources)[0];
     	if(this.moment){
     		this.refreshEntityHistory().then(() => {});
