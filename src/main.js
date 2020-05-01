@@ -1,6 +1,7 @@
 import { LitElement, html, css } from "./lit-element.js";
 import { HomeFeedNotificationPopup } from "./popup.js";
-import { computeStateDisplay as computeStateDisplayHelper, handleClick } from "custom-card-helpers";
+import { computeStateDisplay as computeStateDisplayHelper } from "./helpers/compute-state-display.js";
+import { handleClick } from "custom-card-helpers";
 import { createCard } from "card-tools/src/lovelace-element";
 
 import { getCalendarString } from "./locale.js";
