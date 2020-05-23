@@ -1,10 +1,9 @@
 import { LitElement, html, css } from "./lit-element.js";
-import { HomeFeedNotificationPopup } from "./popup.js";
+import { HomeFeedNotificationPopup, popUp } from "./popup.js";
 import { versionGreaterOrEqual } from "./helpers/hass-version.js";
 import { computeStateDisplay as computeStateDisplayHelper } from "./helpers/compute-state-display.js";
 import { handleClick, computeStateDisplay as computeStateDisplayLegacy  } from "custom-card-helpers";
 import { createCard } from "card-tools/src/lovelace-element";
-
 import { getCalendarString } from "./locale.js";
 
 class HomeFeedCard extends LitElement {
@@ -621,76 +620,13 @@ class HomeFeedCard extends LitElement {
    moreInfo.large = !moreInfo.large;
   }
   
-  popUp(title, message, large=false) {
-    let popup = document.createElement('div');
-    popup.innerHTML = `
-    <style>
-      .main-title {
-      	pointer-events: auto;
-      }
-      app-toolbar {
-        color: var(--primary-text-color);
-        background-color: var(--secondary-background-color);
-      }
-      
-        /* background for small screens */
-        @media all and (max-width: 450px), all and (max-height: 500px) {
-          app-toolbar {
-            color: var(--text-primary-color);
-            background-color: var(--primary-color);
-            
-          }
-        }
-    </style>
-    <app-toolbar>
-      <paper-icon-button
-        icon="hass:close"
-        dialog-dismiss=""
-      ></paper-icon-button>
-      <div class="main-title" main-title="">
-        ${title}
-      </div>
-    </app-toolbar>
-  `;
-  
-    popup.querySelector("app-toolbar").addEventListener('click', this._moreInfoHeaderClick, false);
-    popup.appendChild(message);
-    this.moreInfo(Object.keys(this._hass.states)[0]);
-    let moreInfo = document.querySelector("home-assistant")._moreInfoEl;
-    
-    const oldContent = moreInfo.shadowRoot.querySelector("more-info-controls");
-    if(oldContent) oldContent.style['display'] = 'none';
-
-    moreInfo._page = "none";
-    moreInfo.shadowRoot.appendChild(popup);
-    moreInfo.large = large;
-    //document.querySelector("home-assistant").provideHass(message);
-
-	moreInfo._dialogOpenChanged = function(newVal) {
-    if (!newVal) {
-      if(this.stateObj)
-        this.fire("hass-more-info", {entityId: null});
-
-      if (this.shadowRoot == popup.parentNode) {
-        this._page = null;
-        this.shadowRoot.removeChild(popup);
-
-        const oldContent = this.shadowRoot.querySelector("more-info-controls");
-        if(oldContent) oldContent.style['display'] = "";
-      }
-    }
-   }
-   
-  history.onpushstate = this.closePopUp;
-  return moreInfo;
-  }
-  
-  closePopUp() {
-    let moreInfo = document.querySelector("home-assistant")._moreInfoEl;
-    if (moreInfo && moreInfo.style.display != "none") {
-    	moreInfo.close();
-    	history.onpushstate = null;
-    }
+  provideHass(element) {
+	if(document.querySelector('hc-main'))
+    	return document.querySelector('hc-main').provideHass(element);
+	if(document.querySelector('home-assistant'))
+		return document.querySelector("home-assistant").provideHass(element);
+	
+	return undefined;
   }
  
   fireEvent(ev, detail, entity=null) {
@@ -741,16 +677,18 @@ class HomeFeedCard extends LitElement {
    			
    			 
    			setTimeout(()=>{
-   				popup.shadowRoot.querySelector('ha-card #states')
-   				.querySelectorAll("div")[1]
-   				.querySelector("hui-history-graph-card")
-   				.shadowRoot
-   				.querySelector('ha-card')
-   				.style.boxShadow = 'none';
+   				let card = popup.shadowRoot.querySelector('ha-card #states');
+   				if(card){
+   					card.querySelectorAll("div")[1]
+   					.querySelector("hui-history-graph-card")
+   					.shadowRoot
+   					.querySelector('ha-card')
+   					.style.boxShadow = 'none';
+   				}
    			},100);
    			
   			
-   			this.popUp(item.display_name, popup);
+   			popUp(item.display_name, popup);
   		}
   		else if(item.item_type == "multi_entity" || item.item_type == "calendar_event"){
   			let mock_hass = {};
@@ -762,14 +700,16 @@ class HomeFeedCard extends LitElement {
   			
   			setTimeout(()=>{
   				let card = popup.shadowRoot.querySelector('ha-card');
-  				card.style.maxHeight = "300px";
-  				card.style.overflow = "auto";
+  				if(card){
+  					card.style.maxHeight = "300px";
+  					card.style.overflow = "auto";
+  				}
   			},100);
   			
   			let maxTitleLength = 80;
   			let title = item.display_name;
   			if(title.length > maxTitleLength) title = title.substring(0,maxTitleLength - 3) + "...";
-   			this.popUp(title, popup, false);
+   			popUp(title, popup, false);
   		}
   		else if(item.item_type == "notification")
   		{
@@ -779,7 +719,7 @@ class HomeFeedCard extends LitElement {
   			popup.notification = notification;
   			popup.hass = this._hass;
   			
-  			this.popUp(notification.title, popup, false);
+  			popUp(notification.title, popup, false);
   		}
   		else
   		{
@@ -1000,7 +940,7 @@ class HomeFeedCard extends LitElement {
 		return html`
 		<div class="item-container">
 			<div class="item-left">
-				<state-badge .stateObj='${stateObj}' .overrideIcon='${icon}'/>
+				<state-badge .stateColor=${this._config.state_color} .stateObj='${stateObj}' .overrideIcon='${icon}'/>
 			</div>
 			<div class="item-right">
 				${closeLink}
