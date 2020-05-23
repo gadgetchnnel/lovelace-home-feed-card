@@ -104,7 +104,6 @@ export class HomeFeedNotificationPopup extends LitElement {
 	constructor() {
 		super();
 		this.pushStateInterceptor();
-		console.log("HomeFeedNotificationPopup Constructor");	
   	}
   	
   	createRenderRoot() {
