@@ -97,7 +97,7 @@ class HomeFeedCard extends LitElement {
 				.item-content ha-markdown p {
 					margin-top: 0px;
 				}
-				.header {
+				.card-header {
 					font-family: var(--paper-font-headline_-_font-family); -webkit-font-smoothing: var(--paper-font-headline_-_-webkit-font-smoothing); font-size: var(--paper-font-headline_-_font-size); font-weight: var(--paper-font-headline_-_font-weight); letter-spacing: var(--paper-font-headline_-_letter-spacing); line-height: var(--paper-font-headline_-_line-height);
 					line-height: 30px;
 					color: var(--primary-text-color);
@@ -108,7 +108,7 @@ class HomeFeedCard extends LitElement {
 					z-index: 999;
 					width: 100%;
 				}
-				.header .name {
+				.card-header .name {
 					white-space: var(--paper-font-common-nowrap_-_white-space); overflow: var(--paper-font-common-nowrap_-_overflow); text-overflow: var(--paper-font-common-nowrap_-_text-overflow);
 				}
 				.state-card-dialog {
@@ -152,7 +152,18 @@ class HomeFeedCard extends LitElement {
 			}
 		}
 	}
-
+	renderHeaderFooter(conf, className){
+    	if(!window.cardHelpers) return html``;
+    	
+    	const element = window.cardHelpers.createHeaderFooterElement(conf);
+    	
+    	if (this._hass) {
+      		element.hass = this._hass;
+    	}
+    	
+    	return html` <div class=${"header-footer " + className}>${element}</div> `;
+  	}
+  
 	render() {
 		if(!this._hass || !this.moment){
 			return html``;
@@ -166,14 +177,20 @@ class HomeFeedCard extends LitElement {
 				return html`
 				${HomeFeedCard.stylesheet}
 				<ha-card id="card">
+					${this._config.header
+          				? this.renderHeaderFooter(this._config.header, "header")
+          				: ""}
 					${!this._config.title
 					? html``
 					: html`
-						  <div id="header" class="header">
+						  <div id="header" class="card-header">
 						  <div class="name">${this._config.title}</div>
 						</div>
 					  `}
 					<div id="notifications">${this.feedContent.map((i) => this._renderItem(i))}</div>
+					${this._config.footer
+          				? this.renderHeaderFooter(this._config.footer, "footer")
+          				: ""}
 				</ha-card>
 			`;
 			
@@ -746,13 +763,11 @@ class HomeFeedCard extends LitElement {
 	_buildFeed() {
     	if(!this._hass) return;
 		
-		var feedContent = [];
-		
-    	this.getFeedItems().then(items =>
+		this.getFeedItems().then(items =>
 	  	{
 	  		if(this._config.max_item_count) items.splice(this._config.max_item_count);
 	  		this.feedContent = items;
-			this.requestUpdate();
+	  		this.requestUpdate();
   		});
 	}
 	
@@ -1038,6 +1053,13 @@ class HomeFeedCard extends LitElement {
     	if(this.moment){
     		this.refreshEntityHistory().then(() => {});
     	}
+    	
+    	this.querySelectorAll("ha-card .header-footer > *").forEach(
+      		(element) => {
+        		element.hass = hass;
+      		}
+    	);
+    	
 		this.buildIfReady();
   	}
   	
