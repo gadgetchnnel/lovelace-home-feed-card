@@ -41,6 +41,7 @@ Version 0.2.4 uses dynamic module imports to import the Moment module. Firefox v
         - calendar.work_calendar
       id_filter: ^home_feed_.*
       more_info_on_tap: true
+      state_color: true
       entities:
           - sensor.next_alarm_time
           - entity: sensor.bin_collection
@@ -105,6 +106,8 @@ Note: Due to layout constraints this also removes the dismiss button from notifi
 By default, durations of less than a minute are displayed as "<1 minute ago" or "in <1 minute". Setting this option to true disables this, and displays the exact duration.
 **Note:** Doing this will make the time difference display refresh every second until the duration is 1 minute
 
+### state_color (optional, defaults to false)
+Setting this to true will change the icon colour based on the state (the same as the option in the standard Entities card)
 
 ## Entity object
 
