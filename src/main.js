@@ -70,6 +70,11 @@ class HomeFeedCard extends LitElement {
 					height: auto;
 				}
 
+				.item-left {
+					display: inline-block;
+					vertical-align:top;
+				}
+				
 				.item-left, .item-right {
 					width: 20px;
 					height: 100%;
@@ -90,8 +95,8 @@ class HomeFeedCard extends LitElement {
 				}
 				
 				state-badge {
-					margin-top: -10px;
-					margin-left: -10px;
+					margin-top: -5px;
+					margin-left: -5px;
 				}
 				
 				.item-content ha-markdown p {
@@ -389,7 +394,7 @@ class HomeFeedCard extends LitElement {
   			  			  .reverse()
   			  			  .slice(0,entityConfig.max_history ? entityConfig.max_history : 3)
   			  			  .map(i => {
-  			  			  	return { ...i, icon: this.getIcon(stateObj, entityConfig.icon), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), more_info_on_tap: entityConfig.more_info_on_tap, content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), latestStateObj: stateObj,  stateObj: this.getHistoryState(stateObj,i), item_type: "entity_history",   };
+  			  			  	return { ...i, icon: this.getIcon(i, entityConfig.icon), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), more_info_on_tap: entityConfig.more_info_on_tap, content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), latestStateObj: stateObj,  stateObj: this.getHistoryState(stateObj,i), item_type: "entity_history",   };
   			  			  });
   			  	 });
   	return [].concat.apply([], history);
