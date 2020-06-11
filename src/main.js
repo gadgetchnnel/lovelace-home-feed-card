@@ -68,6 +68,7 @@ class HomeFeedCard extends LitElement {
 				.item-container {
 					width: 100%;
 					height: auto;
+					clear:both;
 				}
 
 				.item-left {
