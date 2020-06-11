@@ -279,7 +279,7 @@ class HomeFeedCard extends LitElement {
 		return icon;
 	}
 	
-	if(stateObj.attributes && stateObj.attributes.icon)
+	if(stateObj && stateObj.attributes && stateObj.attributes.icon)
 	{
 		return stateObj.attributes.icon
 	}
@@ -338,6 +338,9 @@ class HomeFeedCard extends LitElement {
   getMultiItemEntities() {
   		let data = this.entities.filter(i => i.multiple_items === true && i.list_attribute && i.content_template).map(i =>{
   			let stateObj = this._hass.states[i.entity];
+  			
+  			if(!stateObj) return []; // return empty list for this entity if it does not exist (yet)
+  			
   			let icon = this.getIcon(stateObj, i.icon)
   			
   			let items = (stateObj.attributes[i.list_attribute]) ? stateObj.attributes[i.list_attribute] : [];
@@ -356,7 +359,7 @@ class HomeFeedCard extends LitElement {
   getHistoryState(stateObj, item){
   	var newStateObj = {};
   	Object.assign(newStateObj, stateObj);
-  	newStateObj.attributes = item.attributes;
+  	newStateObj.attributes = (item ? item.attributes : {});
   	newStateObj.state = item.state;
   	newStateObj.last_changed = item.last_changed;
   	newStateObj.last_updated = item.last_updated;
@@ -384,10 +387,13 @@ class HomeFeedCard extends LitElement {
 	const start = this.moment.utc().startOf('day').add(-historyDaysBack, 'days').format("YYYY-MM-DDTHH:mm:ss");
     const end = this.moment.utc().format("YYYY-MM-DDTHH:mm:ss");
     
-  	let history = (await this._hass.callApi('get', `history/period/${start}Z?end_time=${end}Z&filter_entity_id=${entity_ids}`))
+    try{
+  			let history = (await this._hass.callApi('get', `history/period/${start}Z?end_time=${end}Z&filter_entity_id=${entity_ids}`))
   	              .map(arr => {
   				let entityConfig = this.entities.find(entity => entity.entity == arr[0].entity_id);
   				let stateObj = this._hass.states[entityConfig.entity];
+  				if(!stateObj) return []; // return empty list if entity does not exist (yet)
+  				
   				let remove_repeats = entityConfig.remove_repeats !== false;
   				return arr.filter(i => !entityConfig.exclude_states.includes(i.state))
   			  			  .filter((item,index,arr) => { return this.repeatFilter(item, index, arr, remove_repeats, entityConfig.keep_latest) })
@@ -397,7 +403,13 @@ class HomeFeedCard extends LitElement {
   			  			  	return { ...i, icon: this.getIcon(i, entityConfig.icon), display_name: ((entityConfig.name) ? entityConfig.name : i.attributes.friendly_name), format: (entityConfig.format != null ? entityConfig.format : "relative"), more_info_on_tap: entityConfig.more_info_on_tap, content_template: entityConfig.content_template, state: this.computeStateDisplay(i,entityConfig), latestStateObj: stateObj,  stateObj: this.getHistoryState(stateObj,i), item_type: "entity_history",   };
   			  			  });
   			  	 });
-  	return [].concat.apply([], history);
+  			  	 
+  			  	 return [].concat.apply([], history);
+  	}
+  	catch(err){
+  		// If there is an error calling History API return empty list
+  		return [];
+  	}
   }
   
   async refreshEntityHistory() {
@@ -462,6 +474,9 @@ class HomeFeedCard extends LitElement {
         
     	var events = [].concat.apply([], calendars);
     	var data = events.map(i => {
+	 		let calendarObject = this._hass.states[i.calendar];
+	 		if(!calendarObject) return []; // If calendar entity does not exist return empty list
+	 		
 	 		let event = { ...i, display_name: i.summary ? i.summary : i.title, start_time: this.eventTime(i.start), end_time: this.eventTime(i.end), all_day: this.eventAllDay(i), format: "relative", item_type: "calendar_event" };
 	 		let startDateTime = this.moment(new Date(event.start_time));
 	 		let endDateTime = this.moment(new Date(event.end_time));
@@ -502,7 +517,7 @@ class HomeFeedCard extends LitElement {
 	 		}
 	 		event.detail = `<ha-icon icon="mdi:clock"></ha-icon> ${eventTime}
 	 		
- <ha-icon icon="mdi:calendar"></ha-icon> ${this._hass.states[i.calendar].attributes["friendly_name"]}
+ <ha-icon icon="mdi:calendar"></ha-icon> ${calendarObject.attributes["friendly_name"]}
 	 		`;
 	 		return event;
 	 	});
