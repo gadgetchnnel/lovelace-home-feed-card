@@ -21,6 +21,16 @@ class HomeFeedCard extends LitElement {
 		this.moment.locale(this.browser_language);
   	}
   	
+  	connectedCallback() {
+  		super.connectedCallback();
+  		this._notificationMonitorInterval = setInterval(() => this.notificationMonitor(), 1000);
+	}
+	
+	disconnectedCallback() {
+  		if(this._notificationMonitorInterval) clearInterval(this._notificationMonitorInterval);
+  		super.disconnectedCallback();
+	}
+	
 	static get properties() { return {
     	_config: { type: Object },
     	hass: { type: Object }
@@ -226,7 +236,6 @@ class HomeFeedCard extends LitElement {
       this.entities = this.processConfigEntities(this._config.entities);
       this.calendars = this._config.calendars;
 	  setTimeout(() => this.buildIfReady(), 10);
-      this.notificationMonitor();
 	}
   
   processConfigEntities(entities) {
@@ -1050,11 +1059,6 @@ class HomeFeedCard extends LitElement {
       		this.refreshNotifications().then(() => {});
       	}
       }
-      
-      window.setTimeout(
-        () => this.notificationMonitor(),
-        1000
-      );
     }
     
     buildIfReady(){
