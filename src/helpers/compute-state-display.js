@@ -10,6 +10,10 @@ export function computeStateDisplay(localize, stateObj, language) {
     return localize(`state.default.${stateObj.state}`);
   }
   
+  if (stateObj.attributes.device_class == "timestamp") {
+    return `${stateObj.state}`;
+  }
+  
   if (stateObj.attributes.unit_of_measurement) {
     return `${stateObj.state} ${stateObj.attributes.unit_of_measurement}`;
   }
