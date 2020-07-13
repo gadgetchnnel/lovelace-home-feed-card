@@ -187,9 +187,13 @@ class HomeFeedCard extends LitElement {
 		else{
 			if(this.feedContent != null){
 				if(this.feedContent.length === 0 && this._config.show_empty === false){
+					this.style.display = "none";
+					
 					return html``;
 				}
 				else{
+				this.style.display = "block";
+				
 				return html`
 				${HomeFeedCard.stylesheet}
 				<ha-card id="card">
@@ -213,6 +217,8 @@ class HomeFeedCard extends LitElement {
 					}
 			}
 			else{
+				this.style.display = "none";
+				
 				return html``;
 			}
 		}
@@ -1089,9 +1095,27 @@ class HomeFeedCard extends LitElement {
   	}
   	
   	getCardSize() {
-    	return 2;
+  		if (!this._config || !this.feedContent) {
+      		return 0;
+    	}
+    	// +1 for the header
+    	let size = (this._config.title ? 1 : 0) + (this.feedContent.length || 1);
+    	
+    	if(this._config.header) size += 1;
+    	
+    	if(this._config.footer) size += 1;
+    	
+    	return size;
   	}
 }
 
 customElements.define("home-feed-card", HomeFeedCard);
 customElements.define("home-feed-notification-popup", HomeFeedNotificationPopup);
+
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type: "home-feed-card",
+  name: "Home Feed Card",
+  preview: false,
+  description: "Display persistent notifications, calendar events, and entities as a feed." // Optional
+});
