@@ -1,5 +1,6 @@
 import { LitElement, html, css } from "./lit-element.js";
-import { HomeFeedNotificationPopup, popUp } from "./popup.js";
+import { HomeFeedNotificationPopup } from "./popup.js";
+import { popUp, closePopUp } from "card-tools/src/popup";
 import { versionGreaterOrEqual } from "./helpers/hass-version.js";
 import { computeStateDisplay as computeStateDisplayHelper } from "./helpers/compute-state-display.js";
 import { handleClick, computeStateDisplay as computeStateDisplayLegacy  } from "custom-card-helpers";
@@ -723,56 +724,64 @@ class HomeFeedCard extends LitElement {
   			mock_hass.states[item.entity_id] = item.stateObj;
   			
   			let config = {"type":"custom:hui-entities-card", "entities": [{"entity":item.entity_id,"secondary_info":"last-changed"}, {"type":"custom:hui-history-graph-card","entities":[item.entity_id]}]};
-  			let popup = createCard(config);
   			
-  			popup.hass = mock_hass;
+   			popUp(item.display_name, config, false, {"box-shadow": "none!important"});
    			
-   			
-   			 
    			setTimeout(()=>{
-   				let card = popup.shadowRoot.querySelector('ha-card #states');
-   				if(card){
-   					card.querySelectorAll("div")[1]
-   					.querySelector("hui-history-graph-card")
-   					.shadowRoot
-   					.querySelector('ha-card')
-   					.style.boxShadow = 'none';
-   				}
-   			},100);
-   			
-  			
-   			popUp(item.display_name, popup);
+   				
+   				let popupRoot = document.querySelector("home-assistant").shadowRoot.querySelector("card-tools-popup").shadowRoot;
+  				let card = popupRoot.querySelector("ha-dialog")
+  									.querySelector("hui-entities-card");
+  				
+  				if(card){
+  					card.hass = mock_hass;
+  					let states = card.shadowRoot.querySelector("ha-card #states");
+  					if(states) {
+  						states.querySelectorAll("div")[1]
+   							  .querySelector("hui-history-graph-card")
+   							  .shadowRoot
+   							  .querySelector('ha-card')
+   							  .style.boxShadow = 'none';
+   					}
+  				}
+  			},100);
   		}
   		else if(item.item_type == "multi_entity" || item.item_type == "calendar_event"){
   			let mock_hass = {};
   			Object.assign(mock_hass, this._hass);
   			
   			let config = {"type":"custom:hui-markdown-card", "content": item.detail, "item": item.item_data};
-  			let popup = createCard(config);
-  			popup.hass = this._hass;
-  			
-  			setTimeout(()=>{
-  				let card = popup.shadowRoot.querySelector('ha-card');
-  				if(card){
-  					card.style.maxHeight = "300px";
-  					card.style.overflow = "auto";
-  				}
-  			},100);
   			
   			let maxTitleLength = 80;
   			let title = item.display_name;
   			if(title.length > maxTitleLength) title = title.substring(0,maxTitleLength - 3) + "...";
-   			popUp(title, popup, false);
+   			popUp(title, config, false);
+   			
+   			setTimeout(()=>{
+   				
+   				let popupRoot = document.querySelector("home-assistant").shadowRoot.querySelector("card-tools-popup").shadowRoot;
+  				let card = popupRoot.querySelector("ha-dialog")
+  									.querySelector("hui-markdown-card")
+  									.shadowRoot.querySelector("ha-card");
+  				
+  				if(card){
+  					card.style.boxShadow = "none";
+  					card.style.maxHeight = "300px";
+  					card.style.overflow = "auto";
+  				}
+  			},100);
   		}
   		else if(item.item_type == "notification")
   		{
   			let notification = item.original_notification;
   			if(!notification.title) notification.title = this.notificationIdToTitle(notification.notification_id);
-  			let popup = document.createElement("home-feed-notification-popup");
-  			popup.notification = notification;
-  			popup.hass = this._hass;
   			
-  			popUp(notification.title, popup, false);
+  			//let popup = document.createElement("home-feed-notification-popup");
+  			//popup.notification = notification;
+  			//popup.hass = this._hass;
+  			let config = {"type":"custom:home-feed-notification-popup", "notification": notification};
+  			
+  			popUp(notification.title, config, false);
   		}
   		else
   		{
