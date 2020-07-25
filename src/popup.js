@@ -4,21 +4,16 @@ import { closePopUp } from "card-tools/src/popup";
 export class HomeFeedNotificationPopup extends LitElement {
 	constructor() {
 		super();
-		this.pushStateInterceptor();
   	}
   	
-  	createRenderRoot() {
-		return this;
-	}
-	
 	setConfig(config){
 		this._notification = config.notification;
 	}
 	
-	render() {
-		return html`
-			<style type="text/css">
-				.contents {
+	static get styles()
+	{
+		return css`
+			.contents {
         			padding: 16px;
         			-ms-user-select: text;
         			-webkit-user-select: text;
@@ -52,7 +47,22 @@ export class HomeFeedNotificationPopup extends LitElement {
         			border-top: 1px solid #e8e8e8;
         			padding: 5px 16px;
       			}
-			</style>
+		`;
+	}
+	render() {
+		setTimeout(() => {
+			let root = this.shadowRoot;
+			let card =root.querySelector("ha-card");
+			
+			let markdownElement = card && card.querySelector("ha-markdown").shadowRoot.querySelector("ha-markdown-element");
+			if(markdownElement){
+				markdownElement.querySelectorAll("a").forEach(link => {
+  					link.addEventListener("click", closePopUp);
+  				});
+			}
+		},100);
+		
+		return html`
 			<ha-card>
 				<div class="contents">
 					<ha-markdown .hass="${this._hass}" .content="${this._notification.message}"></ha-markdown>

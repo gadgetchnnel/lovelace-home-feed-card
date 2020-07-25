@@ -38,10 +38,6 @@ class HomeFeedCard extends LitElement {
   		};
   	}
 	
-	createRenderRoot() {
-		return this;
-	}
-	
 	get pageRoot() {
 		let root = document.querySelector("home-assistant");
 		root = root && root.shadowRoot;
@@ -58,9 +54,8 @@ class HomeFeedCard extends LitElement {
 	
 	
 	
-	static get stylesheet() {
-		return html`
-			<style>
+	static get styles() {
+		return css`
 				ha-card {
 			  		padding: 0 16px 16px 16px;
 				}
@@ -152,14 +147,12 @@ class HomeFeedCard extends LitElement {
     				white-space: nowrap;
     				overflow: hidden;
     				text-overflow: ellipsis;
-				}
-	</style>
-	`;
+				}`;
 	}
 
 	async updated(changedProperties) {
 		if(!this.configuredScrollbars){
-			var root = this.querySelector("ha-card #notifications");
+			var root = this.shadowRoot.querySelector("ha-card #notifications");
 			if(root && this._config){	
 	  			if(this._config.scrollbars_enabled !== false || this._config.max_height){
 	  				root.style.maxHeight = this._config.max_height ? this._config.max_height : "28em";
@@ -196,7 +189,6 @@ class HomeFeedCard extends LitElement {
 				this.style.display = "block";
 				
 				return html`
-				${HomeFeedCard.stylesheet}
 				<ha-card id="card">
 					${this._config.header
           				? this.renderHeaderFooter(this._config.header, "header")
@@ -713,6 +705,15 @@ class HomeFeedCard extends LitElement {
     this.fireEvent("hass-more-info", {entityId: entity});
   }
   
+  findPopUpCard(cardType){
+  	let root = document.querySelector("home-assistant");
+  	root = root && root.shadowRoot;
+  	root = root && root.querySelector("card-tools-popup");
+  	root = root && root.shadowRoot;
+  	root = root && root.querySelector("ha-dialog");
+  	return root.querySelector(cardType);
+  }
+  
   _handleClick(ev) {
   		let item = ev.currentTarget.item;
   		
@@ -729,13 +730,10 @@ class HomeFeedCard extends LitElement {
    			
    			setTimeout(()=>{
    				
-   				let popupRoot = document.querySelector("home-assistant").shadowRoot.querySelector("card-tools-popup").shadowRoot;
-  				let card = popupRoot.querySelector("ha-dialog")
-  									.querySelector("hui-entities-card");
-  				
-  				if(card){
-  					card.hass = mock_hass;
-  					let states = card.shadowRoot.querySelector("ha-card #states");
+   				let popup = this.findPopUpCard("hui-entities-card");
+  				if(popup){
+  					popup.hass = mock_hass;
+  					let states = popup.shadowRoot && popup.shadowRoot.querySelector("ha-card #states");
   					if(states) {
   						states.querySelectorAll("div")[1]
    							  .querySelector("hui-history-graph-card")
@@ -759,15 +757,20 @@ class HomeFeedCard extends LitElement {
    			
    			setTimeout(()=>{
    				
-   				let popupRoot = document.querySelector("home-assistant").shadowRoot.querySelector("card-tools-popup").shadowRoot;
-  				let card = popupRoot.querySelector("ha-dialog")
-  									.querySelector("hui-markdown-card")
-  									.shadowRoot.querySelector("ha-card");
+   				let popup = this.findPopUpCard("hui-markdown-card");
+  				let card = popup && popup.shadowRoot && popup.shadowRoot.querySelector("ha-card");
   				
   				if(card){
   					card.style.boxShadow = "none";
   					card.style.maxHeight = "300px";
   					card.style.overflow = "auto";
+  					
+  					let markdownElement = card.querySelector("ha-markdown").shadowRoot.querySelector("ha-markdown-element");
+  					if(markdownElement){
+  						markdownElement.querySelectorAll("a").forEach(link => {
+  							link.addEventListener("click", closePopUp);
+  						});
+  					}
   				}
   			},100);
   		}
@@ -776,9 +779,6 @@ class HomeFeedCard extends LitElement {
   			let notification = item.original_notification;
   			if(!notification.title) notification.title = this.notificationIdToTitle(notification.notification_id);
   			
-  			//let popup = document.createElement("home-feed-notification-popup");
-  			//popup.notification = notification;
-  			//popup.hass = this._hass;
   			let config = {"type":"custom:home-feed-notification-popup", "notification": notification};
   			
   			popUp(notification.title, config, false);
@@ -1094,7 +1094,7 @@ class HomeFeedCard extends LitElement {
     		this.refreshEntityHistory().then(() => {});
     	}
     	
-    	this.querySelectorAll("ha-card .header-footer > *").forEach(
+    	this.shadowRoot.querySelectorAll("ha-card .header-footer > *").forEach(
       		(element) => {
         		element.hass = hass;
       		}
