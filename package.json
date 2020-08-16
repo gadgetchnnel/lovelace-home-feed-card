@@ -14,13 +14,14 @@
   "author": "Steven Rollason",
   "license": "MIT",
   "devDependencies": {
-    "webpack": "^4.41.6",
+    "webpack": "^4.44.1",
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
     "card-tools": "github:thomasloven/lovelace-card-tools",
     "custom-card-helpers": "^1.4.0",
-    "moment": "^2.24.0"
+    "moment": "^2.24.0",
+    "serialize-javascript": "^4.0.0"
   },
   "main": "webpack.config.js",
   "keywords": []
