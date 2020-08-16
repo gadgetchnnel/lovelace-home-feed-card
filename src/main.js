@@ -24,11 +24,20 @@ class HomeFeedCard extends LitElement {
   	
   	connectedCallback() {
   		super.connectedCallback();
-  		this._notificationMonitorInterval = setInterval(() => this.notificationMonitor(), 1000);
+  		this._unsubNotifications = this._hass.connection.subscribeEvents(() => {
+  			this.refreshNotifications().then(() => {});
+    	}, "persistent_notifications_updated");
 	}
 	
 	disconnectedCallback() {
-  		if(this._notificationMonitorInterval) clearInterval(this._notificationMonitorInterval);
+  		if (this._unsubNotifications) {
+  			this._unsubNotifications.then((unsubscribe) =>
+  			{
+      			unsubscribe();
+      			this._unsubNotifications = undefined;
+  			});
+    	}
+    	
   		super.disconnectedCallback();
 	}
 	
@@ -1060,19 +1069,6 @@ class HomeFeedCard extends LitElement {
         done = this.recursiveWalk(node,func);
         if (done) return true;
         node = node.nextSibling;
-      }
-    }
-    
-    notificationMonitor() {
-	  let oldNotificationCount = this.notificationCount ? this.notificationCount : "0";
-	  let notificationsLastUpdate = JSON.parse(localStorage.getItem('home-feed-card-notificationsLastUpdate' + this.cacheId));
-      if(this._hass){
-        const filtered = Object.keys(this._hass.states).filter(key => key.startsWith("persistent_notification."));
-      	let notificationCount = filtered.length;
-      	if(notificationCount != oldNotificationCount || (this.moment && this.moment().diff(notificationsLastUpdate, 'minutes') > 5)){
-      		this.notificationCount = notificationCount;
-      		this.refreshNotifications().then(() => {});
-      	}
       }
     }
     
