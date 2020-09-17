@@ -24,9 +24,11 @@ class HomeFeedCard extends LitElement {
   	
   	connectedCallback() {
   		super.connectedCallback();
-  		this._unsubNotifications = this._hass.connection.subscribeEvents(() => {
-  			this.refreshNotifications().then(() => {});
-    	}, "persistent_notifications_updated");
+		window.hassConnection.then(c => { 
+			this._unsubNotifications = c.conn.subscribeEvents(() => {
+   				this.refreshNotifications().then(() => {});
+     		}, "persistent_notifications_updated");
+		});
 	}
 	
 	disconnectedCallback() {
@@ -189,6 +191,9 @@ class HomeFeedCard extends LitElement {
 		} 
 		else{
 			if(this.feedContent != null){
+				// Create a dummy Markdown card to ensure that hui-markdown-card and ha-markdown are loaded
+				createCard({"type": "markdown", "content": "**dummy Markdown card**"});
+				
 				if(this.feedContent.length === 0 && this._config.show_empty === false){
 					this.style.display = "none";
 					
