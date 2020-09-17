@@ -772,11 +772,19 @@ class HomeFeedCard extends LitElement {
    			setTimeout(()=>{
    				
    				let popup = this.findPopUpCard("hui-markdown-card");
-  				let card = popup && popup.shadowRoot && popup.shadowRoot.querySelector("ha-card");
+   				let toolbar = popup.parentElement.parentElement.querySelector("app-toolbar");
+   				
+   				let size = toolbar.getBoundingClientRect();
+   				let width = Math.trunc(size.width);
+   				
+   				let card = popup && popup.shadowRoot && popup.shadowRoot.querySelector("ha-card");
   				
   				if(card){
-  					card.style.boxShadow = "none";
-  					card.style.maxHeight = "300px";
+  				    card.style.background = "rgba(0,0,0,0)";
+  				    card.style.boxShadow = "none";
+  					card.style.borderRadius = 0;
+  					card.style.maxHeight = "75vh";
+  					card.style.minWidth = width + "px";
   					card.style.overflow = "auto";
   					
   					let markdownElement = card.querySelector("ha-markdown").shadowRoot.querySelector("ha-markdown-element");
