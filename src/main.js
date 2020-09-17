@@ -269,7 +269,7 @@ class HomeFeedCard extends LitElement {
         		 }
         		 
         		 if(!entityConf.exclude_states){
-        		 	entityConf = { ...entityConf, exclude_states: ["unknown"]};
+        		 	entityConf = { ...entityConf, exclude_states: ["unknown", null]};
         		 }
     		} else {
       			throw new Error(`Invalid entity specified at position ${index}.`);
