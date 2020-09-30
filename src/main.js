@@ -28,6 +28,11 @@ class HomeFeedCard extends LitElement {
 			this._unsubNotifications = c.conn.subscribeEvents(() => {
    				this.refreshNotifications().then(() => {});
      		}, "persistent_notifications_updated");
+     		
+     		if(this._hass){
+     			this.refreshNotifications().then(() => {});
+     			this.requestUpdate();
+     		}
 		});
 	}
 	
@@ -149,6 +154,9 @@ class HomeFeedCard extends LitElement {
                   max-width: 100%;
                 }
                 
+                ha-markdown {
+                	max-width: 100%;
+                }
 				ha-markdown.compact {
 					max-width: 65%;
 				}
