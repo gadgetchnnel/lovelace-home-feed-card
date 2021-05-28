@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "./lit-element.js";
+import { LitElement, html, css } from "lit-element";
 import { closePopUp } from "card-tools/src/popup";
 
 export class HomeFeedNotificationPopup extends LitElement {

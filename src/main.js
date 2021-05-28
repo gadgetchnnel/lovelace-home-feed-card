@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "./lit-element.js";
+import { LitElement, html, css } from "lit-element";
 import { HomeFeedNotificationPopup } from "./popup.js";
 import { popUp, closePopUp } from "card-tools/src/popup";
 import { versionGreaterOrEqual } from "./helpers/hass-version.js";
@@ -288,6 +288,10 @@ class HomeFeedCard extends LitElement {
   
   computeStateDisplay(stateObj, entityConfig){
   	let domain = entityConfig.entity.split('.')[0];
+  	
+  	if(entityConfig.attribute) {
+  		return stateObj.attributes[entityConfig.attribute];
+  	}
   	
   	if(domain == "automation"){
   		return "Triggered";
@@ -746,22 +750,37 @@ class HomeFeedCard extends LitElement {
   			mock_hass.states = [];
   			mock_hass.states[item.entity_id] = item.stateObj;
   			
-  			let config = {"type":"custom:hui-entities-card", "entities": [{"entity":item.entity_id,"secondary_info":"last-changed"}, {"type":"custom:hui-history-graph-card","entities":[item.entity_id]}]};
   			
-   			popUp(item.display_name, config, false, {"box-shadow": "none!important"});
+  			let config = {"type":"custom:hui-entities-card", "entities": [
+  								{"entity":item.entity_id,"secondary_info":"last-changed"}, 
+  								{"type":"custom:hui-history-graph-card","entities":[item.entity_id]}, 
+  								{"type":"custom:hui-logbook-card","entities":[item.entity_id]}
+  							]};
+  			createCard({"type":"logbook","entities":[item.entity_id]});
+  			console.log("Helpers", window.cardHelpers);
+  			popUp(item.display_name, config, false, {"box-shadow": "none!important"});
    			
    			setTimeout(()=>{
    				
    				let popup = this.findPopUpCard("hui-entities-card");
+   				
   				if(popup){
   					popup.hass = mock_hass;
-  					let states = popup.shadowRoot && popup.shadowRoot.querySelector("ha-card #states");
+  					let ha_card = popup.shadowRoot && popup.shadowRoot.querySelector("ha-card");
+  					if(ha_card){
+  						ha_card.style.borderRadius = "0";
+  					}
+  					let states = ha_card && ha_card.querySelector("#states");
   					if(states) {
-  						states.querySelectorAll("div")[1]
-   							  .querySelector("hui-history-graph-card")
+  						let graph = states.querySelector("div hui-history-graph-card")
    							  .shadowRoot
-   							  .querySelector('ha-card')
-   							  .style.boxShadow = 'none';
+   							  .querySelector('ha-card');
+   						graph.style.boxShadow = 'none';
+   						
+   						let logbook = states.querySelector("div hui-logbook-card")
+   							  .shadowRoot
+   							  .querySelector('ha-card');
+   						logbook.style.boxShadow = 'none';
    					}
   				}
   			},100);
