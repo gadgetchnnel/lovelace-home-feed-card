@@ -5,7 +5,7 @@ A custom Lovelace card for displaying a combination of persistent notifications,
 
 ## Installation
 
-You can install this manually or via [HACS](https://github.com/custom-components/hacs) or [custom_updater](https://github.com/custom-components/custom_updater)(deprecated) if you want easy updating,
+You can install this manually or via [HACS](https://github.com/custom-components/hacs) if you want easy updating,
 
 ### Manually
 Download all files and place them in the folder **www/custom-lovelace/home-feed-card** under your Home Assistant config folder.
