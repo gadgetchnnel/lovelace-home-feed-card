@@ -28,26 +28,26 @@ Version 0.2.4 uses dynamic module imports to import the Moment module. Firefox v
 ## Configuration
 
     type: 'custom:home-feed-card'
-      title: Home Feed
-      card_id: main_feed
-      show_empty: false
-      calendars:
-        - calendar.home_calendar
-        - calendar.work_calendar
-      id_filter: ^home_feed_.*
-      more_info_on_tap: true
-      state_color: true
-      entities:
-          - sensor.next_alarm_time
-          - entity: sensor.bin_collection
-            name: Next Bin Collection
-            more_info_on_tap: false
-          - entity: sensor.reddit_help
-            multiple_items: true
-            list_attribute: posts
-            timestamp_property: created_
-            max_items: 5
-            content_template: '[{{title}}]({{url}})'
+    title: Home Feed
+    card_id: main_feed
+    show_empty: false
+    calendars:
+      - calendar.home_calendar
+      - calendar.work_calendar
+    id_filter: ^home_feed_.*
+    more_info_on_tap: true
+    state_color: true
+    entities:
+      - sensor.next_alarm_time
+      - entity: sensor.bin_collection
+        name: Next Bin Collection
+        more_info_on_tap: false
+      - entity: sensor.reddit_help
+        multiple_items: true
+        list_attribute: posts
+        timestamp_property: created_
+        max_items: 5
+        content_template: '[{{title}}]({{url}})'
 
 ![Example](https://user-images.githubusercontent.com/2099542/53899297-d0abb580-4031-11e9-8357-ac45c71e95f5.png)
 
