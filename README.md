@@ -154,18 +154,18 @@ This is the same as the option of the same name at the top level. This allows fo
 Example:
 
     type: 'custom:home-feed-card'
-      title: Home Feed
-      show_empty: false
-      id_filter: ^home_feed_.*
-      entities:
-          - entity: device_tracker.my_phone
-            name: Me
-            content_template: '{{display_name}} arrived at {{state}} ({{latitude}},{{longitude}})'
-            include_history: true
-            max_history: 5
-            remove_repeats: false
-            state_map:
-              not_home: Unknown Destination
+    title: Home Feed
+    show_empty: false
+    id_filter: ^home_feed_.*
+    entities:
+      - entity: device_tracker.my_phone
+        name: Me
+        content_template: '{{display_name}} arrived at {{state}} ({{latitude}},{{longitude}})'
+        include_history: true
+        max_history: 5
+        remove_repeats: false
+        state_map:
+          not_home: Unknown Destination
 
 ## Handling of Automations
 Starting from 0.3.5b1, automations are handled slightly differently from other entities. The differences are as follows:
@@ -204,19 +204,19 @@ Entities can made to appear as multiple items in your feed if they contain a lis
 To add multi-item entities for this the following format would be used:
 
     type: 'custom:home-feed-card'
-      title: Home Feed
-      show_empty: false
-      calendars:
-        - calendar.home_calendar
-        - calendar.work_calendar
-      id_filter: ^home_feed_.*
-      entities:
-         - entity: sensor.reddit_<name>
-           multiple_items: true
-           list_attribute: posts
-           timestamp_property: created
-           max_items: 5
-           content_template: '{{title}}'
+    title: Home Feed
+    show_empty: false
+    calendars:
+      - calendar.home_calendar
+      - calendar.work_calendar
+    id_filter: ^home_feed_.*
+    entities:
+      - entity: sensor.reddit_<name>
+        multiple_items: true
+        list_attribute: posts
+        timestamp_property: created
+        max_items: 5
+        content_template: '{{title}}'
 
 ### multiple_items (required)
 This must be **true** to identify the entity as a multi-item entity
