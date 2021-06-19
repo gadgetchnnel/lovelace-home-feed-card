@@ -256,6 +256,8 @@ class HomeFeedCard extends LitElement {
 	  this._config = config;
       this.entities = this.processConfigEntities(this._config.entities);
       this.calendars = this._config.calendars;
+      this.oldStates = {};
+      
 	  setTimeout(() => this.buildIfReady(), 10);
 	}
   
@@ -446,6 +448,23 @@ class HomeFeedCard extends LitElement {
   		return [];
   	}
   }
+  
+  haveHistoryEntitiesChanged(){
+  	var entity_ids = this.entities.filter(i => i.include_history == true).map(i => i.entity);
+  	
+  	if(!entity_ids) return false;
+  	
+  	for(const entity_id of entity_ids) {
+    	let oldState = this.oldStates[entity_id];
+		if(oldState == null) oldState = {"state":"undefined"};
+		let newState = this._hass.states[entity_id];
+        if(newState == null) newState = {"state":"undefined"};
+		if(newState.state != oldState.state) {
+			return true;
+		}
+    }
+    return false;
+}
   
   async refreshEntityHistory() {
   	if(!this._config.entities || this._config.entities.length == 0){
@@ -1123,11 +1142,16 @@ class HomeFeedCard extends LitElement {
     }
     
   	set hass(hass) {
+		this.oldStates = this._hass != null ? this._hass.states : {};
 		this._hass = hass;
 		this.hass_version = hass.config.version;
 		this._language = Object.keys(hass.resources)[0];
-    	if(this.moment){
-    		this.refreshEntityHistory().then(() => {});
+    	if(this.moment && this.haveHistoryEntitiesChanged()){
+    		setTimeout(() => {
+    			this.refreshEntityHistory().then(() => {
+    				this.buildIfReady();
+    			});
+    		}, 2000);
     	}
     	
     	this.shadowRoot.querySelectorAll("ha-card .header-footer > *").forEach(
