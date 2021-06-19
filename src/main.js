@@ -776,7 +776,6 @@ class HomeFeedCard extends LitElement {
   								{"type":"custom:hui-logbook-card","entities":[item.entity_id]}
   							]};
   			createCard({"type":"logbook","entities":[item.entity_id]});
-  			console.log("Helpers", window.cardHelpers);
   			popUp(item.display_name, config, false, {"box-shadow": "none!important"});
    			
    			setTimeout(()=>{
