@@ -508,8 +508,8 @@ class HomeFeedCard extends LitElement {
 	if(!this.calendars || this.calendars.length == 0) return [];
 	let lastUpdate = JSON.parse(localStorage.getItem('home-feed-card-eventsLastUpdate' + this.cacheId));
 	if(!lastUpdate || (this.moment && this.moment().diff(lastUpdate, 'minutes') > 15)) {
-		let calendarDaysBack = (this._config.calendar_days_back ? this._config.calendar_days_back : 0);
-		let calendarDaysForward = (this._config.calendar_days_forward ? this._config.calendar_days_forward : 1);
+		let calendarDaysBack = (typeof this._config.calendar_days_back !== 'undefined' ? this._config.calendar_days_back : 0);
+		let calendarDaysForward = (typeof this._config.calendar_days_forward !== 'undefined' ? this._config.calendar_days_forward : 1);
 		const start = this.moment.utc().startOf('day').add(-calendarDaysBack, 'days').format("YYYY-MM-DDTHH:mm:ss");
 		const end = this.moment.utc().startOf('day').add(calendarDaysForward + 1, 'days').format("YYYY-MM-DDTHH:mm:ss");
 		try{
