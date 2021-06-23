@@ -120,6 +120,15 @@ This allows overriding the display name of the entity, otherwise the friendly na
 ### icon (optional)
 Allows overriding the icon of the entity
 
+### attribute (optional, added in 0.6.0)
+Define an attribute to use instead of the state for the entity in the list
+
+e.g.
+    entities:
+      - entity: sensor.my_sensor
+        name: Sensor Time
+        attribute: time
+
 ### content_template (optional)
 This allows the display format for that entity to be customised. The format is {{*propertyname*}}. The available properties are:
 * **display_name** The entity name (friendly name if not overridden with the name option)
