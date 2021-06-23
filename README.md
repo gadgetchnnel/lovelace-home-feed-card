@@ -60,7 +60,7 @@ This is a list of calendar entities you want events to display for in your feed.
 ### calendar_days_back (optional, defaults to 0, added in 0.3.5b2)
 The number of days before the current day to include calendar events for in the feed
 
-### calendar_days_forward (optionla, defaults to 1, added in 0.3.5b2)
+### calendar_days_forward (optional, defaults to 1, added in 0.3.5b2)
 The number of days after the current day to include calendar events for in the feed. This will include events up to the end of that day so, if you only want the current day, this should be set to 0
 
 
