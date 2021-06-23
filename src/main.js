@@ -885,6 +885,7 @@ class HomeFeedCard extends LitElement {
 	
 	_renderItem(n) {
 		let compact_mode = this._config.compact_mode === true;
+		let show_icons = this._config.show_icons !== false;
 		
 		switch(n.item_type)
 		{
@@ -1064,9 +1065,11 @@ class HomeFeedCard extends LitElement {
 		let stateObj = n.stateObj ? n.stateObj : {"entity_id": "", "state": "unknown", "attributes":{}};
 		//let contentItem = n.item_type == "multi_entity" ? n.item_data : n.stateObj; 
 		
+		let iconStyle = !show_icons ? "display:none;" : "";
+		
 		return html`
 		<div class="item-container">
-			<div class="item-left">
+			<div class="item-left" style="${iconStyle}">
 				<state-badge .stateColor=${this._config.state_color} .stateObj='${stateObj}' .overrideIcon='${icon}'/>
 			</div>
 			<div class="item-right">
