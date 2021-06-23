@@ -70,6 +70,9 @@ The number of days before the current day to include event history for in the fe
 ### id_filter (optional)
 This is a regular expression for filtering persistent notifications by notification id. In the example above, "^home_feed_.\*" will result in only notifications with ids starting with home_feed_ from being displayed.
 
+### show_notification_title (optional, defaults to false)
+Display the title for persistent notifications in the feed
+
 ### entities (optional)
 A list of entities to display on the feed. These can be displayed as single items, or multiple items from a sensor attribute (see the section on multi-item entities).
 Single item entities are displayed as follows:
