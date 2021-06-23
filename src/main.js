@@ -1088,7 +1088,7 @@ class HomeFeedCard extends LitElement {
   			`;
   		}
   		return html`
-  		<ha-markdown class="markdown-content ${compact_mode ? "compact" : ""}" style="float:left;" .content=${contentText}></ha-markdown>
+  		<ha-markdown breaks class="markdown-content ${compact_mode ? "compact" : ""}" style="float:left;" .content=${contentText}></ha-markdown>
   		`;
   	}
   	get notificationButton() {

@@ -65,7 +65,7 @@ export class HomeFeedNotificationPopup extends LitElement {
 		return html`
 			<ha-card>
 				<div class="contents">
-					<ha-markdown .hass="${this._hass}" .content="${this._notification.message}"></ha-markdown>
+					<ha-markdown breaks .hass="${this._hass}" .content="${this._notification.message}"></ha-markdown>
 					<div class="time">
           				<span>
             				<ha-relative-time .hass="${this._hass}" .datetime="${this._notification.created_at}"></ha-relative-time>

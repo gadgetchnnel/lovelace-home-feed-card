@@ -370,7 +370,7 @@ const Q=window.ShadowRoot&&(void 0===window.ShadyCSS||window.ShadyCSS.nativeShad
 		`}itemContent(e,t,a){return"unavailable"==e.item_type?A`
   			<hui-warning class="markdown-content ${t?"compact":""}" style="float:left;">${a}</hui-warning>
   			`:A`
-  		<ha-markdown class="markdown-content ${t?"compact":""}" style="float:left;" .content=${a}></ha-markdown>
+  		<ha-markdown breaks class="markdown-content ${t?"compact":""}" style="float:left;" .content=${a}></ha-markdown>
   		`}get notificationButton(){return this._notificationButton||(this._notificationButton=this.rootElement.querySelector("hui-notifications-button")),this._notificationButton}get rootElement(){return this._root||this.recursiveWalk(document,e=>"HUI-ROOT"==e.nodeName?(this._root=e.shadowRoot,e.shadowRoot):null),this._root}recursiveWalk(e,t){let a=t(e);if(a)return!0;if("shadowRoot"in e&&e.shadowRoot&&(a=this.recursiveWalk(e.shadowRoot,t),a))return!0;for(e=e.firstChild;e;){if(a=this.recursiveWalk(e,t),a)return!0;e=e.nextSibling}}buildIfReady(){if(!this._hass||!this.moment)return;let e=JSON.parse(localStorage.getItem("home-feed-card-notificationsLastUpdate"+this.cacheId));this.loadedNotifications&&e||!this.moment||this.refreshNotifications().then(()=>{}),this._buildFeed()}set hass(e){this.oldStates=null!=this._hass?this._hass.states:{},this._hass=e,this.hass_version=e.config.version,this._language=Object.keys(e.resources)[0],this.moment&&this.haveHistoryEntitiesChanged()&&setTimeout(()=>{this.refreshEntityHistory().then(()=>{this.buildIfReady()})},2e3),this.shadowRoot.querySelectorAll("ha-card .header-footer > *").forEach(t=>{t.hass=e}),this.buildIfReady()}getCardSize(){if(!this._config||!this.feedContent)return 0;let e=(this._config.title?1:0)+(this.feedContent.length||1);return this._config.header&&(e+=1),this._config.footer&&(e+=1),e}}),customElements.define("home-feed-notification-popup",class extends ae{constructor(){super()}setConfig(e){this._notification=e.notification}static get styles(){return ee`
 			.contents {
         			padding: 16px;
@@ -409,7 +409,7 @@ const Q=window.ShadowRoot&&(void 0===window.ShadyCSS||window.ShadyCSS.nativeShad
 		`}render(){return setTimeout(()=>{let e=this.shadowRoot.querySelector("ha-card"),t=e&&e.querySelector("ha-markdown").shadowRoot.querySelector("ha-markdown-element");t&&t.querySelectorAll("a").forEach(e=>{e.addEventListener("click",me)})},100),A`
 			<ha-card>
 				<div class="contents">
-					<ha-markdown .hass="${this._hass}" .content="${this._notification.message}"></ha-markdown>
+					<ha-markdown breaks .hass="${this._hass}" .content="${this._notification.message}"></ha-markdown>
 					<div class="time">
           				<span>
             				<ha-relative-time .hass="${this._hass}" .datetime="${this._notification.created_at}"></ha-relative-time>
