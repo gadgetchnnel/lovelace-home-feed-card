@@ -97,7 +97,7 @@ When this is true, tapping/clicking and entity will display the more-info dialog
 When this is true, a more compact layout is used where the time is displayed on the same line as the item content.
 Note: Due to layout constraints this also removes the dismiss button from notifications and so notifications will always be clickable in compact mode even if **more_info_on_tap** is disabled.
 
-### show_icons (optional, defaults to true)
+### show_icons (optional, defaults to true, added in 0.6.1)
 Setting this to false removes the icons from the left of the feed, can be used together with compact_mode to get a very compact feed.
 
 ### exact_durations (optional, defaults to false)
