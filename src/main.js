@@ -20,6 +20,7 @@ class HomeFeedCard extends LitElement {
 		this.browser_language = window.navigator.userLanguage || window.navigator.language;
 		if(this.browser_language == "hy") this.browser_language = "hy-am"; // "hy" (Armenian) wrongly maps to zh-tw (Taiwan Chinese)
 		this.moment.locale(this.browser_language);
+		this.preloadElementsIfNeeded();
   	}
   	
   	connectedCallback() {
@@ -199,9 +200,6 @@ class HomeFeedCard extends LitElement {
 		} 
 		else{
 			if(this.feedContent != null){
-				// Create a dummy Markdown card to ensure that hui-markdown-card and ha-markdown are loaded
-				createCard({"type": "markdown", "content": "**dummy Markdown card**"});
-				
 				if(this.feedContent.length === 0 && this._config.show_empty === false){
 					this.style.display = "none";
 					
@@ -242,7 +240,7 @@ class HomeFeedCard extends LitElement {
 		return this._config.card_id ? this._config.card_id : this.pageId + this._config.title;
 	}
 	
-	get editMode() {
+	get inEditMode() {
 		let parentNodeName = this.parentElement && this.parentElement.nodeName;
 		return parentNodeName == "HUI-CARD-PREVIEW";
 	}
@@ -263,14 +261,24 @@ class HomeFeedCard extends LitElement {
       this.calendars = this._config.calendars;
       this.oldStates = {};
       
-      if(!this.editMode)
+      if(!this.inEditMode)
       {
       	console.log("Clearing Cache");
       	this.clearCache();
       }
+      
+	  this.preloadElementsIfNeeded();
+	  	
 	  setTimeout(() => this.buildIfReady(), 10);
 	}
   
+  preloadElementsIfNeeded() {
+  	// Preload required elements if not available
+  	if (!customElements.get("ha-markdown") || !customElements.get("hui-markdown-card")) {
+	    console.log("Preloading elements");
+		createCard({"type": "markdown", "content": "**dummy Markdown card**"});
+	  }	
+  }
   processConfigEntities(entities) {
   		if(!entities) return [];
   		
