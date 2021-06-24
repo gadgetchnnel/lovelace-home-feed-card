@@ -57,6 +57,10 @@ If this is set, it is used as the key for cacheing the feed in Local Storage, ot
 ### calendars (optional)
 This is a list of calendar entities you want events to display for in your feed.
 
+### calendar_time_format (optional, defaults to relative, added in 0.6.2)
+How the calendar event timestamp should be formatted.
+Valid values are: relative, date, time and datetime.
+
 ### calendar_days_back (optional, defaults to 0, added in 0.3.5b2)
 The number of days before the current day to include calendar events for in the feed
 

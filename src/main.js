@@ -242,6 +242,11 @@ class HomeFeedCard extends LitElement {
 		return this._config.card_id ? this._config.card_id : this.pageId + this._config.title;
 	}
 	
+	get editMode() {
+		let parentNodeName = this.parentElement && this.parentElement.nodeName;
+		return parentNodeName == "HUI-CARD-PREVIEW";
+	}
+	
     clearCache() {
     	localStorage.removeItem('home-feed-card-events' + this.cacheId);
 	 	localStorage.removeItem('home-feed-card-eventsLastUpdate' + this.cacheId);
@@ -258,6 +263,11 @@ class HomeFeedCard extends LitElement {
       this.calendars = this._config.calendars;
       this.oldStates = {};
       
+      if(!this.editMode)
+      {
+      	console.log("Clearing Cache");
+      	this.clearCache();
+      }
 	  setTimeout(() => this.buildIfReady(), 10);
 	}
   
@@ -531,7 +541,7 @@ class HomeFeedCard extends LitElement {
 	 		let calendarObject = this._hass.states[i.calendar];
 	 		if(!calendarObject) return []; // If calendar entity does not exist return empty list
 	 		
-	 		let event = { ...i, display_name: i.summary ? i.summary : i.title, start_time: this.eventTime(i.start), end_time: this.eventTime(i.end), all_day: this.eventAllDay(i), format: "relative", item_type: "calendar_event" };
+	 		let event = { ...i, display_name: i.summary ? i.summary : i.title, start_time: this.eventTime(i.start), end_time: this.eventTime(i.end), all_day: this.eventAllDay(i), format: this._config.calendar_time_format ? this._config.calendar_time_format : "relative", item_type: "calendar_event" };
 	 		let startDateTime = this.moment(new Date(event.start_time));
 	 		let endDateTime = this.moment(new Date(event.end_time));
 	 		let eventTime = "";
