@@ -6,6 +6,13 @@ import { computeStateDisplay as computeStateDisplayHelper } from "./helpers/comp
 import { handleClick, computeStateDisplay as computeStateDisplayLegacy  } from "custom-card-helpers";
 import { createCard } from "card-tools/src/lovelace-element";
 import { getCalendarString } from "./locale.js";
+import { CARD_VERSION } from "./version.js";
+
+console.info(
+		`%c  HOME-FEED-CARD \n%c  Version ${CARD_VERSION}    `,
+		'color: orange; font-weight: bold; background: black',
+		'color: white; font-weight: bold; background: dimgray',
+		);
 
 class HomeFeedCard extends LitElement {
     constructor() {
