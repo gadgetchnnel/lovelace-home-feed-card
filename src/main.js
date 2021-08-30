@@ -112,7 +112,7 @@ class HomeFeedCard extends LitElement {
 					float: left;
 				}
 
-				.item-right {
+				.rtl {
 					float: right;
 				}
 				
@@ -260,7 +260,7 @@ class HomeFeedCard extends LitElement {
 	 	localStorage.removeItem('home-feed-card-history' + this.cacheId);
     }
     
-    setConfig(config) {
+    async setConfig(config) {
 	  if(!config)
       	throw new Error("Invalid configuration");
 	  this._config = config;
@@ -274,18 +274,25 @@ class HomeFeedCard extends LitElement {
       	this.clearCache();
       }
       
-	  this.preloadElementsIfNeeded();
+	  await this.preloadElementsIfNeeded();
 	  	
 	  setTimeout(() => this.buildIfReady(), 10);
 	}
   
+  preloadElement(name, config){
+  	if (!customElements.get(name)) {
+		createCard(config);
+	}
+  }
+  
   preloadElementsIfNeeded() {
   	// Preload required elements if not available
-  	if (!customElements.get("ha-markdown") || !customElements.get("hui-markdown-card")) {
-	    console.log("Preloading elements");
-		createCard({"type": "markdown", "content": "**dummy Markdown card**"});
-	  }	
+  	this.preloadElement("ha-markdown", {"type": "markdown", "content": "**dummy Markdown card**"});
+	this.preloadElement("hui-markdown-card", {"type": "markdown", "content": "**dummy Markdown card**"});
+	this.preloadElement("hui-history-graph-card", {"type": "history-graph", "entities": []});
+	this.preloadElement("hui-logbook-card", {"type": "logbook", "entities": []});
   }
+  
   processConfigEntities(entities) {
   		if(!entities) return [];
   		
@@ -1091,10 +1098,11 @@ class HomeFeedCard extends LitElement {
 		//let contentItem = n.item_type == "multi_entity" ? n.item_data : n.stateObj; 
 		
 		let iconStyle = !show_icons ? "display:none;" : "";
+		let iconClass = this._config.rtl === true ? "item-left rtl" : "item-left";
 		
 		return html`
 		<div class="item-container">
-			<div class="item-left" style="${iconStyle}">
+			<div class="${iconClass}" style="${iconStyle}">
 				<state-badge .stateColor=${this._config.state_color} .stateObj='${stateObj}' .overrideIcon='${icon}'/>
 			</div>
 			<div class="item-right">
