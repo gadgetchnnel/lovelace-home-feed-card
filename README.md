@@ -138,13 +138,14 @@ This allows the display format for that entity to be customised. The format is {
 * **display_name** The entity name (friendly name if not overridden with the name option)
 * **state** The state display name (based on device class of entity)
 
+In addition any attribute of the entity can be used (do not prefix with *attributes.*).
+
 ### include_history (optional, defaults to false)
 This allows the history of an entity to be displayed, rather than just its current state (states of "unknown" are automatically filtered out).
 This currently uses the history for the last day.
 
 ### max_history (optional)
 The maximum history of the entity to display, this defaults to 3
-In addition any attribute of the entity can be used (do not prefix with *attributes.*).
 
 ### remove_repeats (optional, defaults to true)
 This controls whether to remove repeated states from the history (e.g. the current state is the same as the previous state).
