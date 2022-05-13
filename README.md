@@ -1,11 +1,11 @@
 # lovelace-home-feed-card
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
 A custom Lovelace card for displaying a combination of persistent notifications, calendar events, and entities in the style of a feed.
 
 ## Installation
 
-You can install this manually or via [HACS](https://github.com/custom-components/hacs) if you want easy updating,
+You can install this manually or via [HACS](https://github.com/hacs/integration) if you want easy updating,
 
 ### Manually
 Download all files and place them in the folder **www/custom-lovelace/home-feed-card** under your Home Assistant config folder.
