@@ -6,6 +6,7 @@ import { computeStateDisplay as computeStateDisplayHelper } from "./helpers/comp
 import { handleClick, computeStateDisplay as computeStateDisplayLegacy  } from "custom-card-helpers";
 import { createCard } from "card-tools/src/lovelace-element";
 import { getCalendarString } from "./locale.js";
+import { subscribeNotifications } from "./helpers/subscribe-notifications.js";
 import { CARD_VERSION } from "./version.js";
 
 console.info(
@@ -32,8 +33,9 @@ class HomeFeedCard extends LitElement {
   	
   	connectedCallback() {
   		super.connectedCallback();
-		window.hassConnection.then(c => { 
-			this._unsubNotifications = c.conn.subscribeEvents(() => {
+		
+		window.hassConnection.then(c => {
+			this._unsubNotifications = subscribeNotifications(c.conn, () => {
    				this.refreshNotifications().then(() => {});
      		}, "persistent_notifications_updated");
      		
@@ -46,11 +48,8 @@ class HomeFeedCard extends LitElement {
 	
 	disconnectedCallback() {
   		if (this._unsubNotifications) {
-  			this._unsubNotifications.then((unsubscribe) =>
-  			{
-      			unsubscribe();
-      			this._unsubNotifications = undefined;
-  			});
+  			this._unsubNotifications();
+  			this._unsubNotifications = undefined;
     	}
     	
   		super.disconnectedCallback();
