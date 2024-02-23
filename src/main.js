@@ -1102,7 +1102,7 @@ class HomeFeedCard extends LitElement {
 		return html`
 		<div class="item-container">
 			<div class="${iconClass}" style="${iconStyle}">
-				<state-badge .stateColor=${this._config.state_color} .stateObj='${stateObj}' .overrideIcon='${icon}'/>
+				<state-badge .stateColor=${this._config.state_color} .hass='${this._hass}' .stateObj='${stateObj}' .overrideIcon='${icon}'/>
 			</div>
 			<div class="item-right">
 				${closeLink}
