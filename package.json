@@ -20,7 +20,7 @@
   "dependencies": {
     "card-tools": "github:thomasloven/lovelace-card-tools",
     "custom-card-helpers": "^1.6.6",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "serialize-javascript": "^4.0.0"
   },
   "main": "webpack.config.js",
